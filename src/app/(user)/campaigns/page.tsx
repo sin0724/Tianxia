@@ -53,9 +53,9 @@ export default function CampaignsPage() {
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "");
-  const [selectedRegion, setSelectedRegion] = useState(searchParams.get("region") || "");
-  const [selectedPlatform, setSelectedPlatform] = useState(searchParams.get("platform") || "");
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "all");
+  const [selectedRegion, setSelectedRegion] = useState(searchParams.get("region") || "all");
+  const [selectedPlatform, setSelectedPlatform] = useState(searchParams.get("platform") || "all");
   const [sortBy, setSortBy] = useState<SortOption>((searchParams.get("sort") as SortOption) || "popular");
 
   const supabase = createBrowserClient(
@@ -78,17 +78,17 @@ export default function CampaignsPage() {
       .gte("application_deadline", new Date().toISOString());
 
     // Category filter
-    if (selectedCategory) {
+    if (selectedCategory && selectedCategory !== "all") {
       query = query.eq("category", selectedCategory);
     }
 
     // Region filter
-    if (selectedRegion) {
+    if (selectedRegion && selectedRegion !== "all") {
       query = query.eq("region", selectedRegion);
     }
 
     // Platform filter
-    if (selectedPlatform) {
+    if (selectedPlatform && selectedPlatform !== "all") {
       query = query.contains("platforms", [selectedPlatform]);
     }
 
@@ -186,9 +186,9 @@ export default function CampaignsPage() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
-    if (selectedCategory) params.set("category", selectedCategory);
-    if (selectedRegion) params.set("region", selectedRegion);
-    if (selectedPlatform) params.set("platform", selectedPlatform);
+    if (selectedCategory && selectedCategory !== "all") params.set("category", selectedCategory);
+    if (selectedRegion && selectedRegion !== "all") params.set("region", selectedRegion);
+    if (selectedPlatform && selectedPlatform !== "all") params.set("platform", selectedPlatform);
     if (sortBy !== "popular") params.set("sort", sortBy);
     
     const newUrl = params.toString() ? `?${params.toString()}` : "/campaigns";
@@ -197,14 +197,14 @@ export default function CampaignsPage() {
 
   const clearFilters = () => {
     setSearchQuery("");
-    setSelectedCategory("");
-    setSelectedRegion("");
-    setSelectedPlatform("");
+    setSelectedCategory("all");
+    setSelectedRegion("all");
+    setSelectedPlatform("all");
     setSortBy("popular");
   };
 
-  const hasActiveFilters = searchQuery || selectedCategory || selectedRegion || selectedPlatform;
-  const currentCategory = categories.find((c) => c.id === selectedCategory);
+  const hasActiveFilters = searchQuery || (selectedCategory && selectedCategory !== "all") || (selectedRegion && selectedRegion !== "all") || (selectedPlatform && selectedPlatform !== "all");
+  const currentCategory = selectedCategory !== "all" ? categories.find((c) => c.id === selectedCategory) : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -250,10 +250,14 @@ export default function CampaignsPage() {
                 </label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger>
-                    <SelectValue placeholder="全部分類" />
+                    <SelectValue>
+                      {selectedCategory === "all" 
+                        ? "全部分類" 
+                        : categories.find((c) => c.id === selectedCategory)?.name_zh || "全部分類"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部分類</SelectItem>
+                    <SelectItem value="all">全部分類</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.icon} {cat.name_zh}
@@ -270,10 +274,14 @@ export default function CampaignsPage() {
                 </label>
                 <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                   <SelectTrigger>
-                    <SelectValue placeholder="全部地區" />
+                    <SelectValue>
+                      {selectedRegion === "all"
+                        ? "全部地區"
+                        : KOREA_REGIONS.find((r) => r.value === selectedRegion)?.label_zh || "全部地區"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部地區</SelectItem>
+                    <SelectItem value="all">全部地區</SelectItem>
                     {KOREA_REGIONS.map((region) => (
                       <SelectItem key={region.value} value={region.value}>
                         {region.label_zh}
@@ -290,10 +298,14 @@ export default function CampaignsPage() {
                 </label>
                 <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
                   <SelectTrigger>
-                    <SelectValue placeholder="全部平台" />
+                    <SelectValue>
+                      {selectedPlatform === "all"
+                        ? "全部平台"
+                        : PLATFORMS.find((p) => p.value === selectedPlatform)?.label_zh || "全部平台"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部平台</SelectItem>
+                    <SelectItem value="all">全部平台</SelectItem>
                     {PLATFORMS.map((platform) => (
                       <SelectItem key={platform.value} value={platform.value}>
                         {platform.label_zh}
