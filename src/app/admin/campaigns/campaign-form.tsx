@@ -76,21 +76,23 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           region: campaign.region,
           thumbnail_url: campaign.thumbnail_url || "",
           recruitment_count: campaign.recruitment_count,
-          application_deadline: campaign.application_deadline.split("T")[0],
-          experience_date: campaign.experience_date.split("T")[0],
-          review_deadline: campaign.review_deadline.split("T")[0],
+          application_deadline: campaign.application_deadline?.split("T")[0] || "",
+          experience_date: campaign.experience_date?.split("T")[0] || "",
+          review_deadline: campaign.review_deadline?.split("T")[0] || "",
           status: campaign.status,
           title_ko: campaign.title_ko,
-          brand_name_ko: campaign.brand_name_ko,
-          summary_ko: campaign.summary_ko,
-          description_ko: campaign.description_ko,
-          benefits_ko: campaign.benefits_ko,
-          requirements_ko: campaign.requirements_ko,
+          brand_name_ko: campaign.brand_name_ko || "",
+          guide_ko: campaign.summary_ko
+            ? `${campaign.summary_ko}${campaign.description_ko ? "\n\n" + campaign.description_ko : ""}`
+            : campaign.description_ko || "",
+          benefits_ko: campaign.benefits_ko || "",
+          requirements_ko: campaign.requirements_ko || "",
           precautions_ko: campaign.precautions_ko || "",
         }
       : {
           recruitment_count: 1,
           status: "active",
+          requirements_ko: "인스타그램, 쓰레드 계정 소지자",
         },
   });
 
@@ -198,17 +200,21 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
     setIsLoading(true);
 
     try {
+      const guideText = data.guide_ko || "";
+      const summaryText = guideText.split("\n")[0]?.slice(0, 100) || "";
+      const descriptionText = guideText;
+
       const translateResponse = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title_ko: data.title_ko,
-          brand_name_ko: data.brand_name_ko,
-          summary_ko: data.summary_ko,
-          description_ko: data.description_ko,
-          benefits_ko: data.benefits_ko,
-          requirements_ko: data.requirements_ko,
-          precautions_ko: data.precautions_ko,
+          title_ko: data.title_ko || "",
+          brand_name_ko: data.brand_name_ko || "",
+          summary_ko: summaryText,
+          description_ko: descriptionText,
+          benefits_ko: data.benefits_ko || "",
+          requirements_ko: data.requirements_ko || "",
+          precautions_ko: data.precautions_ko || "",
         }),
       });
 
@@ -221,22 +227,28 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
       const supabase = createClient();
 
       const campaignData = {
-        category: data.category,
-        region: data.region,
+        category: data.category || null,
+        region: data.region || null,
         platforms: selectedPlatforms,
         thumbnail_url: thumbnailUrl || null,
         map_url: mapUrl || null,
-        recruitment_count: data.recruitment_count,
-        application_deadline: new Date(data.application_deadline).toISOString(),
-        experience_date: new Date(data.experience_date).toISOString(),
-        review_deadline: new Date(data.review_deadline).toISOString(),
+        recruitment_count: data.recruitment_count || 1,
+        application_deadline: data.application_deadline
+          ? new Date(data.application_deadline).toISOString()
+          : null,
+        experience_date: data.experience_date
+          ? new Date(data.experience_date).toISOString()
+          : null,
+        review_deadline: data.review_deadline
+          ? new Date(data.review_deadline).toISOString()
+          : null,
         status: data.status,
         title_ko: data.title_ko,
-        brand_name_ko: data.brand_name_ko,
-        summary_ko: data.summary_ko,
-        description_ko: data.description_ko,
-        benefits_ko: data.benefits_ko,
-        requirements_ko: data.requirements_ko,
+        brand_name_ko: data.brand_name_ko || null,
+        summary_ko: summaryText || null,
+        description_ko: descriptionText || null,
+        benefits_ko: data.benefits_ko || null,
+        requirements_ko: data.requirements_ko || null,
         precautions_ko: data.precautions_ko || null,
         ...translations,
       };
@@ -298,7 +310,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="category">카테고리 *</Label>
+              <Label htmlFor="category">카테고리</Label>
               <Select
                 value={selectedCategory || ""}
                 onValueChange={(value) => setValue("category", value)}
@@ -321,14 +333,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.category && (
-                <p className="text-sm text-destructive">
-                  {errors.category.message}
-                </p>
-              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="region">지역 *</Label>
+              <Label htmlFor="region">지역</Label>
               <Select
                 value={selectedRegion || ""}
                 onValueChange={(value) => setValue("region", value)}
@@ -351,17 +358,12 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.region && (
-                <p className="text-sm text-destructive">
-                  {errors.region.message}
-                </p>
-              )}
             </div>
           </div>
 
           {/* 플랫폼 다중 선택 */}
           <div className="space-y-2">
-            <Label>플랫폼 * (복수 선택 가능)</Label>
+            <Label>플랫폼 (복수 선택 가능)</Label>
             <div className="flex flex-wrap gap-2">
               {PLATFORMS.map((platform) => (
                 <button
@@ -463,62 +465,42 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <Label htmlFor="recruitment_count">모집 인원 *</Label>
+              <Label htmlFor="recruitment_count">모집 인원</Label>
               <Input
                 id="recruitment_count"
                 type="number"
                 min={1}
                 {...register("recruitment_count", { valueAsNumber: true })}
               />
-              {errors.recruitment_count && (
-                <p className="text-sm text-destructive">
-                  {errors.recruitment_count.message}
-                </p>
-              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="application_deadline">신청 마감일 *</Label>
+              <Label htmlFor="application_deadline">신청 마감일</Label>
               <Input
                 id="application_deadline"
                 type="date"
                 {...register("application_deadline")}
               />
-              {errors.application_deadline && (
-                <p className="text-sm text-destructive">
-                  {errors.application_deadline.message}
-                </p>
-              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="experience_date">체험 날짜 *</Label>
+              <Label htmlFor="experience_date">체험 날짜</Label>
               <Input
                 id="experience_date"
                 type="date"
                 {...register("experience_date")}
               />
-              {errors.experience_date && (
-                <p className="text-sm text-destructive">
-                  {errors.experience_date.message}
-                </p>
-              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="review_deadline">후기 마감일 *</Label>
+              <Label htmlFor="review_deadline">후기 마감일</Label>
               <Input
                 id="review_deadline"
                 type="date"
                 {...register("review_deadline")}
               />
-              {errors.review_deadline && (
-                <p className="text-sm text-destructive">
-                  {errors.review_deadline.message}
-                </p>
-              )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="status">상태 *</Label>
+            <Label htmlFor="status">상태</Label>
             <Select
               value={selectedStatus || "active"}
               onValueChange={(value) =>
@@ -565,78 +547,49 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="brand_name_ko">브랜드명 *</Label>
+              <Label htmlFor="brand_name_ko">브랜드명</Label>
               <Input
                 id="brand_name_ko"
                 placeholder="브랜드명을 입력하세요"
                 {...register("brand_name_ko")}
               />
-              {errors.brand_name_ko && (
-                <p className="text-sm text-destructive">
-                  {errors.brand_name_ko.message}
-                </p>
-              )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="summary_ko">요약 *</Label>
+            <Label htmlFor="guide_ko">캠페인 가이드</Label>
             <Textarea
-              id="summary_ko"
-              placeholder="캠페인 요약을 입력하세요 (2-3줄)"
-              rows={2}
-              {...register("summary_ko")}
+              id="guide_ko"
+              placeholder="캠페인 요약 및 상세 설명을 입력하세요"
+              rows={8}
+              {...register("guide_ko")}
             />
-            {errors.summary_ko && (
-              <p className="text-sm text-destructive">
-                {errors.summary_ko.message}
-              </p>
-            )}
+            <p className="text-xs text-gray-500">
+              캠페인 소개, 참여 방법, 상세 내용 등을 자유롭게 작성해 주세요
+            </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description_ko">상세 설명 *</Label>
-            <Textarea
-              id="description_ko"
-              placeholder="캠페인 상세 설명을 입력하세요"
-              rows={6}
-              {...register("description_ko")}
-            />
-            {errors.description_ko && (
-              <p className="text-sm text-destructive">
-                {errors.description_ko.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="benefits_ko">제공 혜택 *</Label>
+            <Label htmlFor="benefits_ko">제공 혜택</Label>
             <Textarea
               id="benefits_ko"
               placeholder="체험단에게 제공되는 혜택을 입력하세요"
               rows={4}
               {...register("benefits_ko")}
             />
-            {errors.benefits_ko && (
-              <p className="text-sm text-destructive">
-                {errors.benefits_ko.message}
-              </p>
-            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="requirements_ko">참여 조건 *</Label>
+            <Label htmlFor="requirements_ko">참여 조건</Label>
             <Textarea
               id="requirements_ko"
               placeholder="참여 조건을 입력하세요"
-              rows={4}
+              rows={3}
               {...register("requirements_ko")}
             />
-            {errors.requirements_ko && (
-              <p className="text-sm text-destructive">
-                {errors.requirements_ko.message}
-              </p>
-            )}
+            <p className="text-xs text-gray-500">
+              기본값: 인스타그램, 쓰레드 계정 소지자 (특이사항 있을 경우만 수정)
+            </p>
           </div>
 
           <div className="space-y-2">
