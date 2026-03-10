@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil } from "lucide-react";
+import { Plus } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { getRegionLabel } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
+import { CampaignActions } from "./campaign-actions";
 
 export default async function AdminCampaignsPage() {
   const supabase = await createClient();
@@ -92,12 +93,13 @@ export default async function AdminCampaignsPage() {
                     </p>
                   )}
                 </div>
-                <Link href={`/admin/campaigns/${campaign.id}`}>
-                  <Button variant="outline" size="sm" className="gap-2 rounded-lg">
-                    <Pencil className="h-4 w-4" />
-                    수정
-                  </Button>
-                </Link>
+                <CampaignActions
+                  campaign={{
+                    id: campaign.id,
+                    title_ko: campaign.title_ko,
+                    application_deadline: campaign.application_deadline,
+                  }}
+                />
               </div>
             </div>
           ))}
