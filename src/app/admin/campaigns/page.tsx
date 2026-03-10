@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -6,14 +7,35 @@ import { formatDate } from "@/lib/utils";
 import { getRegionLabel } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
 import { CampaignActions } from "./campaign-actions";
+import { CampaignSearch } from "./campaign-search";
 
-export default async function AdminCampaignsPage() {
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function AdminCampaignsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const search = typeof params.search === "string" ? params.search : "";
+  const status = typeof params.status === "string" ? params.status : "";
+  const categoryFilter = typeof params.category === "string" ? params.category : "";
+
   const supabase = await createClient();
 
-  const { data: campaigns } = await supabase
-    .from("campaigns")
-    .select("*")
-    .order("created_at", { ascending: false });
+  let query = supabase.from("campaigns").select("*");
+
+  if (search) {
+    query = query.or(`title_ko.ilike.%${search}%,brand_name_ko.ilike.%${search}%`);
+  }
+
+  if (status && status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  if (categoryFilter && categoryFilter !== "all") {
+    query = query.eq("category", categoryFilter);
+  }
+
+  const { data: campaigns } = await query.order("created_at", { ascending: false });
 
   const { data: categories } = await supabase
     .from("categories")
@@ -32,6 +54,8 @@ export default async function AdminCampaignsPage() {
       .join(", ");
   };
 
+  const totalCount = campaigns?.length || 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -45,6 +69,16 @@ export default async function AdminCampaignsPage() {
             새 캠페인
           </Button>
         </Link>
+      </div>
+
+      {/* Search & Filters */}
+      <div className="rounded-xl bg-white p-4 shadow-sm">
+        <Suspense fallback={<div className="h-10 animate-pulse bg-gray-100 rounded" />}>
+          <CampaignSearch categories={categories || []} />
+        </Suspense>
+        <p className="mt-3 text-sm text-gray-500">
+          총 <span className="font-medium text-gray-900">{totalCount}</span>개의 캠페인
+        </p>
       </div>
 
       {campaigns && campaigns.length > 0 ? (
