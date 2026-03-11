@@ -33,6 +33,7 @@ interface CampaignWithCount {
   brand_name_zh_tw: string | null;
   status: string;
   application_count: number;
+  bonus_application_count: number;
 }
 
 type SortOption = "popular" | "deadline" | "latest";
@@ -109,12 +110,17 @@ export default function CampaignsPage() {
     let processedCampaigns = (data || []).map((campaign) => ({
       ...campaign,
       application_count: campaign.applications?.[0]?.count || 0,
+      bonus_application_count: campaign.bonus_application_count || 0,
     }));
 
     // Sort
     switch (sortBy) {
       case "popular":
-        processedCampaigns.sort((a, b) => b.application_count - a.application_count);
+        processedCampaigns.sort((a, b) => {
+          const aTotal = a.application_count + (a.bonus_application_count || 0);
+          const bTotal = b.application_count + (b.bonus_application_count || 0);
+          return bTotal - aTotal;
+        });
         break;
       case "deadline":
         processedCampaigns.sort((a, b) => 

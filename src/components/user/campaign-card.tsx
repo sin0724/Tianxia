@@ -6,7 +6,7 @@ import { getRegionLabel } from "@/constants/regions";
 import type { Campaign, Category } from "@/types/database";
 
 interface CampaignCardProps {
-  campaign: Campaign & { application_count?: number };
+  campaign: Campaign & { application_count?: number; bonus_application_count?: number };
   categories?: Category[];
 }
 
@@ -68,7 +68,9 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
   const daysRemaining = getDaysRemaining(campaign.application_deadline);
   const category = categories?.find((c) => c.id === campaign.category);
   const categoryLabel = category ? category.name_zh : "";
-  const applicationCount = campaign.application_count || 0;
+  const realCount = campaign.application_count || 0;
+  const bonusCount = campaign.bonus_application_count || 0;
+  const displayCount = realCount + bonusCount;
   const platforms: string[] = (campaign as any).platforms || ["instagram"];
 
   return (
@@ -121,7 +123,7 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
             )}
             {/* 모집/신청 인원 */}
             <span className="flex items-center gap-1 text-xs font-medium">
-              <span className="text-primary">{applicationCount}</span>
+              <span className="text-primary">{displayCount}</span>
               <span className="text-gray-400">/</span>
               <span className="text-gray-600">{campaign.recruitment_count}名</span>
             </span>

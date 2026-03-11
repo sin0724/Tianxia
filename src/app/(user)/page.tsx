@@ -30,6 +30,7 @@ interface CampaignWithCount {
   brand_name_zh_tw: string | null;
   status: string;
   application_count: number;
+  bonus_application_count: number;
 }
 
 export default function HomePage() {
@@ -79,8 +80,13 @@ export default function HomePage() {
           .map((campaign) => ({
             ...campaign,
             application_count: campaign.applications?.[0]?.count || 0,
+            bonus_application_count: campaign.bonus_application_count || 0,
           }))
-          .sort((a, b) => b.application_count - a.application_count)
+          .sort((a, b) => {
+            const aTotal = a.application_count + (a.bonus_application_count || 0);
+            const bTotal = b.application_count + (b.bonus_application_count || 0);
+            return bTotal - aTotal;
+          })
           .slice(0, 6);
         setCampaigns(campaignsWithCount);
       }

@@ -47,6 +47,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
   const [mapUrl, setMapUrl] = useState<string>(
     (campaign as any)?.map_url || ""
   );
+  const [bonusCount, setBonusCount] = useState<number>(
+    (campaign as any)?.bonus_application_count || 0
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = !!campaign;
 
@@ -233,6 +236,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         thumbnail_url: thumbnailUrl || null,
         map_url: mapUrl || null,
         recruitment_count: data.recruitment_count || 1,
+        bonus_application_count: bonusCount || 0,
         application_deadline: data.application_deadline
           ? new Date(data.application_deadline).toISOString()
           : null,
@@ -463,7 +467,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-2">
               <Label htmlFor="recruitment_count">모집 인원</Label>
               <Input
@@ -472,6 +476,17 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
                 min={1}
                 {...register("recruitment_count", { valueAsNumber: true })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bonus_count">보너스 신청자</Label>
+              <Input
+                id="bonus_count"
+                type="number"
+                min={0}
+                value={bonusCount}
+                onChange={(e) => setBonusCount(parseInt(e.target.value) || 0)}
+              />
+              <p className="text-xs text-gray-500">표시용 추가 인원</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="application_deadline">신청 마감일</Label>

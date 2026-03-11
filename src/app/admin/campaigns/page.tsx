@@ -119,6 +119,11 @@ export default async function AdminCampaignsPage({ searchParams }: PageProps) {
                   <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                     <span>지역: {getRegionLabel(campaign.region, "ko")}</span>
                     <span>모집: {campaign.recruitment_count}명</span>
+                    {(campaign as any).bonus_application_count > 0 && (
+                      <span className="text-blue-600">
+                        보너스: +{(campaign as any).bonus_application_count}명
+                      </span>
+                    )}
                     <span>마감: {formatDate(campaign.application_deadline, "ko")}</span>
                   </div>
                   {campaign.title_zh_tw && (
