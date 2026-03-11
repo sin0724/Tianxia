@@ -64,6 +64,26 @@ function getPlatformColor(platform: string) {
   }
 }
 
+function getProgressColor(percentage: number) {
+  if (percentage >= 100) return "bg-gradient-to-r from-purple-500 to-pink-500";
+  if (percentage >= 80) return "bg-gradient-to-r from-red-500 to-orange-500";
+  if (percentage >= 50) return "bg-gradient-to-r from-orange-400 to-yellow-400";
+  return "bg-gradient-to-r from-emerald-400 to-teal-400";
+}
+
+function getStatusBadge(percentage: number, remaining: number) {
+  if (percentage >= 100) {
+    return { text: "競爭激烈", icon: "🔥", bgColor: "bg-purple-100", textColor: "text-purple-600" };
+  }
+  if (remaining <= 3 && remaining > 0) {
+    return { text: `僅剩 ${remaining} 名額`, icon: "⚡", bgColor: "bg-red-100", textColor: "text-red-600" };
+  }
+  if (percentage >= 70) {
+    return { text: "人氣活動", icon: "🔥", bgColor: "bg-orange-100", textColor: "text-orange-600" };
+  }
+  return null;
+}
+
 export function CampaignCard({ campaign, categories }: CampaignCardProps) {
   const daysRemaining = getDaysRemaining(campaign.application_deadline);
   const category = categories?.find((c) => c.id === campaign.category);
@@ -72,6 +92,11 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
   const bonusCount = campaign.bonus_application_count || 0;
   const displayCount = realCount + bonusCount;
   const platforms: string[] = (campaign as any).platforms || ["instagram"];
+  
+  const recruitmentCount = campaign.recruitment_count || 1;
+  const percentage = Math.round((displayCount / recruitmentCount) * 100);
+  const remaining = recruitmentCount - displayCount;
+  const statusBadge = getStatusBadge(percentage, remaining);
 
   return (
     <Link href={`/campaigns/${campaign.id}`}>
@@ -115,18 +140,40 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
           )}
         </div>
         <div className="p-5">
+          {/* 모집 현황 프로그레스 바 */}
+          <div className="mb-3">
+            <div className="mb-1.5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                {statusBadge && (
+                  <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadge.bgColor} ${statusBadge.textColor}`}>
+                    <span>{statusBadge.icon}</span>
+                    <span>{statusBadge.text}</span>
+                  </span>
+                )}
+              </div>
+              <span className="flex items-center gap-1 text-xs font-semibold">
+                <span className="text-primary">{displayCount}</span>
+                <span className="text-gray-300">/</span>
+                <span className="text-gray-500">{recruitmentCount}名</span>
+              </span>
+            </div>
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100">
+              <div 
+                className={`absolute left-0 top-0 h-full rounded-full transition-all duration-500 ${getProgressColor(percentage)}`}
+                style={{ width: `${Math.min(percentage, 100)}%` }}
+              />
+              {percentage > 100 && (
+                <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              )}
+            </div>
+          </div>
+
           <div className="mb-2 flex items-center justify-between">
             {category && (
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
                 {category.icon} {categoryLabel}
               </span>
             )}
-            {/* 모집/신청 인원 */}
-            <span className="flex items-center gap-1 text-xs font-medium">
-              <span className="text-primary">{displayCount}</span>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-600">{campaign.recruitment_count}名</span>
-            </span>
           </div>
           <p className="mb-1 text-xs text-gray-400">
             {campaign.brand_name_zh_tw || campaign.brand_name_ko}
