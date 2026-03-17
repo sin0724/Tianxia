@@ -1,17 +1,102 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
-import { getRegionLabel } from "@/constants/regions";
+import { getRegionLabel, KOREA_REGIONS } from "@/constants/regions";
+import { Search } from "lucide-react";
 
-export default async function AdminUsersPage() {
-  const supabase = await createClient();
+interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  line_id: string;
+  region: string;
+  instagram_handle: string;
+  instagram_url: string | null;
+  threads_url: string | null;
+  facebook_url: string | null;
+  youtube_url: string | null;
+  dcard_url: string | null;
+  created_at: string;
+}
 
-  const { data: users } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("role", "user")
-    .order("created_at", { ascending: false });
+export default function AdminUsersPage() {
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("all");
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("role", "user")
+        .order("created_at", { ascending: false });
+
+      if (data) setUsers(data as UserProfile[]);
+      setLoading(false);
+    };
+
+    fetchUsers();
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+
+    if (selectedRegion !== "all") {
+      filtered = filtered.filter((u) => u.region === selectedRegion);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((u) => {
+        const name = u.name?.toLowerCase() || "";
+        const email = u.email?.toLowerCase() || "";
+        const instagram = u.instagram_handle?.toLowerCase() || "";
+        const lineId = u.line_id?.toLowerCase() || "";
+        return (
+          name.includes(q) ||
+          email.includes(q) ||
+          instagram.includes(q) ||
+          lineId.includes(q)
+        );
+      });
+    }
+
+    return filtered;
+  }, [users, searchQuery, selectedRegion]);
+
+  const regionCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: users.length };
+    users.forEach((u) => {
+      counts[u.region] = (counts[u.region] || 0) + 1;
+    });
+    return counts;
+  }, [users]);
+
+  const REGION_TABS = [
+    { value: "all", label: "전체" },
+    ...KOREA_REGIONS.filter((r) => regionCounts[r.value]).map((r) => ({
+      value: r.value,
+      label: r.label_ko,
+    })),
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -22,9 +107,48 @@ export default async function AdminUsersPage() {
         </p>
       </div>
 
-      {users && users.length > 0 ? (
+      {/* 지역 필터 */}
+      <div className="flex flex-wrap gap-2">
+        {REGION_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setSelectedRegion(tab.value)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+              selectedRegion === tab.value
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {tab.label}
+            {regionCounts[tab.value] !== undefined && (
+              <span className="ml-1.5 rounded-full bg-white/20 px-1.5 py-0.5 text-xs">
+                {regionCounts[tab.value]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* 검색 */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Input
+          placeholder="이름, 이메일, 인스타그램, LINE ID로 검색..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* 결과 수 */}
+      <p className="text-sm text-muted-foreground">
+        {filteredUsers.length}명의 회원
+      </p>
+
+      {/* 회원 목록 */}
+      {filteredUsers.length > 0 ? (
         <div className="space-y-4">
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <Card key={user.id}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
@@ -54,7 +178,6 @@ export default async function AdminUsersPage() {
                       )}
                     </div>
 
-                    {/* Additional SNS */}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {user.threads_url && (
                         <a
@@ -106,7 +229,11 @@ export default async function AdminUsersPage() {
       ) : (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">등록된 회원이 없습니다</p>
+            <p className="text-muted-foreground">
+              {searchQuery || selectedRegion !== "all"
+                ? "검색 결과가 없습니다"
+                : "등록된 회원이 없습니다"}
+            </p>
           </CardContent>
         </Card>
       )}

@@ -1,22 +1,122 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
+import { Search } from "lucide-react";
 import { ApplicationActions } from "./application-actions";
 
-export default async function AdminApplicationsPage() {
-  const supabase = await createClient();
+interface Application {
+  id: string;
+  campaign_id: string;
+  user_id: string;
+  message: string | null;
+  applied_instagram_url: string;
+  applied_threads_url: string | null;
+  applied_facebook_url: string | null;
+  applied_youtube_url: string | null;
+  applied_dcard_url: string | null;
+  status: string;
+  admin_note: string | null;
+  applied_at: string;
+  profiles: {
+    id: string;
+    name: string;
+    email: string;
+    instagram_handle: string;
+    region: string;
+  } | null;
+  campaigns: {
+    id: string;
+    title_ko: string;
+    brand_name_ko: string;
+  } | null;
+}
 
-  const { data: applications } = await supabase
-    .from("applications")
-    .select(
+type StatusFilter = "all" | "pending" | "approved" | "rejected";
+
+export default function AdminApplicationsPage() {
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const supabase = createClient();
+
+  const fetchApplications = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("applications")
+      .select(
+        `
+        *,
+        profiles (id, name, email, instagram_handle, region),
+        campaigns (id, title_ko, brand_name_ko)
       `
-      *,
-      profiles (id, name, email, instagram_handle, region),
-      campaigns (id, title_ko, brand_name_ko)
-    `
-    )
-    .order("applied_at", { ascending: false });
+      )
+      .order("applied_at", { ascending: false });
+
+    if (data) setApplications(data as unknown as Application[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchApplications();
+
+    const channel = supabase
+      .channel("applications-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "applications" },
+        () => fetchApplications()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const filteredApplications = useMemo(() => {
+    let filtered = applications;
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((a) => a.status === statusFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((a) => {
+        const name = a.profiles?.name?.toLowerCase() || "";
+        const email = a.profiles?.email?.toLowerCase() || "";
+        const instagram = a.profiles?.instagram_handle?.toLowerCase() || "";
+        const campaignTitle = a.campaigns?.title_ko?.toLowerCase() || "";
+        const brandName = a.campaigns?.brand_name_ko?.toLowerCase() || "";
+        return (
+          name.includes(q) ||
+          email.includes(q) ||
+          instagram.includes(q) ||
+          campaignTitle.includes(q) ||
+          brandName.includes(q)
+        );
+      });
+    }
+
+    return filtered;
+  }, [applications, statusFilter, searchQuery]);
+
+  const statusCounts = useMemo(() => {
+    const counts = { all: applications.length, pending: 0, approved: 0, rejected: 0 };
+    applications.forEach((a) => {
+      if (a.status === "pending") counts.pending++;
+      else if (a.status === "approved") counts.approved++;
+      else if (a.status === "rejected") counts.rejected++;
+    });
+    return counts;
+  }, [applications]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -29,6 +129,21 @@ export default async function AdminApplicationsPage() {
     }
   };
 
+  const STATUS_TABS: { value: StatusFilter; label: string }[] = [
+    { value: "all", label: "전체" },
+    { value: "pending", label: "대기" },
+    { value: "approved", label: "승인" },
+    { value: "rejected", label: "반려" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -36,22 +151,48 @@ export default async function AdminApplicationsPage() {
         <p className="text-muted-foreground">캠페인 신청을 승인하거나 반려합니다</p>
       </div>
 
-      {applications && applications.length > 0 ? (
-        <div className="space-y-4">
-          {applications.map((application) => {
-            const profile = application.profiles as unknown as {
-              id: string;
-              name: string;
-              email: string;
-              instagram_handle: string;
-              region: string;
-            } | null;
+      {/* 상태 필터 탭 */}
+      <div className="flex flex-wrap gap-2">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setStatusFilter(tab.value)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+              statusFilter === tab.value
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {tab.label}
+            <span className="ml-1.5 rounded-full bg-white/20 px-1.5 py-0.5 text-xs">
+              {statusCounts[tab.value]}
+            </span>
+          </button>
+        ))}
+      </div>
 
-            const campaign = application.campaigns as unknown as {
-              id: string;
-              title_ko: string;
-              brand_name_ko: string;
-            } | null;
+      {/* 검색 */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Input
+          placeholder="이름, 이메일, 인스타그램, 캠페인명으로 검색..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* 결과 수 */}
+      <p className="text-sm text-muted-foreground">
+        {filteredApplications.length}건의 신청
+      </p>
+
+      {/* 신청 목록 */}
+      {filteredApplications.length > 0 ? (
+        <div className="space-y-4">
+          {filteredApplications.map((application) => {
+            const profile = application.profiles;
+            const campaign = application.campaigns;
 
             return (
               <Card key={application.id}>
@@ -59,7 +200,8 @@ export default async function AdminApplicationsPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        {campaign?.brand_name_ko || "알 수 없음"} - {campaign?.title_ko || "알 수 없음"}
+                        {campaign?.brand_name_ko || "알 수 없음"} -{" "}
+                        {campaign?.title_ko || "알 수 없음"}
                       </p>
                       <CardTitle className="text-lg">
                         {profile?.name || "알 수 없음"}
@@ -183,7 +325,11 @@ export default async function AdminApplicationsPage() {
       ) : (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">신청 내역이 없습니다</p>
+            <p className="text-muted-foreground">
+              {searchQuery || statusFilter !== "all"
+                ? "검색 결과가 없습니다"
+                : "신청 내역이 없습니다"}
+            </p>
           </CardContent>
         </Card>
       )}
