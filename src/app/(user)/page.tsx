@@ -58,6 +58,7 @@ export default function HomePage() {
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState<"popular" | "latest">("popular");
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -118,7 +119,7 @@ export default function HomePage() {
   }, [categories]);
 
   const filteredCampaigns = useMemo(() => {
-    let filtered = allCampaigns;
+    let filtered = [...allCampaigns];
 
     if (selectedRegion !== "all") {
       filtered = filtered.filter((c) => c.region === selectedRegion);
@@ -134,8 +135,22 @@ export default function HomePage() {
       filtered = filtered.filter((c) => c.category === selectedCategory);
     }
 
+    if (sortBy === "latest") {
+      filtered.sort(
+        (a, b) =>
+          new Date(b.application_deadline).getTime() -
+          new Date(a.application_deadline).getTime()
+      );
+    } else {
+      filtered.sort((a, b) => {
+        const aTotal = a.application_count + (a.bonus_application_count || 0);
+        const bTotal = b.application_count + (b.bonus_application_count || 0);
+        return bTotal - aTotal;
+      });
+    }
+
     return filtered.slice(0, 6);
-  }, [allCampaigns, selectedRegion, selectedType, selectedCategory, deliveryCategoryId]);
+  }, [allCampaigns, selectedRegion, selectedType, selectedCategory, deliveryCategoryId, sortBy]);
 
   const featuredCategories = useMemo(
     () => categories.filter((c) => c.is_featured),
@@ -360,7 +375,25 @@ export default function HomePage() {
       <section className="py-8 md:py-12">
         <div className="container mx-auto px-4">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">熱門活動</h2>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSortBy("popular")}
+                className={`text-lg font-bold transition-colors ${
+                  sortBy === "popular" ? "text-gray-900" : "text-gray-300 hover:text-gray-500"
+                }`}
+              >
+                人氣活動
+              </button>
+              <span className="text-gray-200">|</span>
+              <button
+                onClick={() => setSortBy("latest")}
+                className={`text-lg font-bold transition-colors ${
+                  sortBy === "latest" ? "text-gray-900" : "text-gray-300 hover:text-gray-500"
+                }`}
+              >
+                最新活動
+              </button>
+            </div>
             <Link href="/campaigns">
               <Button variant="ghost" className="gap-2 text-gray-500 hover:text-primary">
                 查看全部
