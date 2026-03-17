@@ -7,6 +7,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import { CampaignCard } from "@/components/user/campaign-card";
 import { ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { KOREA_REGIONS } from "@/constants/regions";
 import type { Category } from "@/types/database";
 
 const CAMPAIGN_TYPES = [
@@ -22,6 +23,11 @@ const FEATURED_REGIONS = [
   { value: "busan", label_zh: "釜山" },
   { value: "nationwide", label_zh: "全國" },
   { value: "online", label_zh: "線上" },
+] as const;
+
+const ALL_REGIONS = [
+  { value: "all", label_zh: "全部地區" },
+  ...KOREA_REGIONS.map((r) => ({ value: r.value, label_zh: r.label_zh })),
 ] as const;
 
 interface Banner {
@@ -55,6 +61,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllRegions, setShowAllRegions] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -138,8 +145,8 @@ export default function HomePage() {
     if (sortBy === "latest") {
       filtered.sort(
         (a, b) =>
-          new Date(b.application_deadline).getTime() -
-          new Date(a.application_deadline).getTime()
+          new Date((b as any).created_at).getTime() -
+          new Date((a as any).created_at).getTime()
       );
     } else {
       filtered.sort((a, b) => {
@@ -294,10 +301,10 @@ export default function HomePage() {
 
         {/* 지역 필터 */}
         <div className="border-b">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center gap-1 overflow-x-auto py-3 scrollbar-hide">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex flex-wrap items-center gap-1">
               <MapPin className="mr-1 h-4 w-4 shrink-0 text-gray-400" />
-              {FEATURED_REGIONS.map((region) => (
+              {(showAllRegions ? ALL_REGIONS : FEATURED_REGIONS).map((region) => (
                 <button
                   key={region.value}
                   onClick={() => setSelectedRegion(region.value)}
@@ -310,12 +317,16 @@ export default function HomePage() {
                   {region.label_zh}
                 </button>
               ))}
-              <Link
-                href="/campaigns"
-                className="shrink-0 rounded-full px-3.5 py-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              <button
+                onClick={() => setShowAllRegions(!showAllRegions)}
+                className="shrink-0 flex items-center gap-0.5 rounded-full px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600"
               >
-                更多 &rarr;
-              </Link>
+                {showAllRegions ? (
+                  <>收起 <ChevronUp className="h-3.5 w-3.5" /></>
+                ) : (
+                  <>更多 <ChevronDown className="h-3.5 w-3.5" /></>
+                )}
+              </button>
             </div>
           </div>
         </div>
