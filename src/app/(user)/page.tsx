@@ -1,13 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { createBrowserClient } from "@supabase/ssr";
 import { CampaignCard } from "@/components/user/campaign-card";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Category } from "@/types/database";
+
+const CAMPAIGN_TYPES = [
+  { value: "all", label_zh: "全部", icon: "📋" },
+  { value: "experience", label_zh: "體驗型", icon: "🎯" },
+  { value: "delivery", label_zh: "配送型", icon: "📦" },
+] as const;
+
+const FEATURED_REGIONS = [
+  { value: "all", label_zh: "全部地區" },
+  { value: "seoul", label_zh: "首爾" },
+  { value: "gyeonggi", label_zh: "京畿道" },
+  { value: "busan", label_zh: "釜山" },
+  { value: "nationwide", label_zh: "全國" },
+  { value: "online", label_zh: "線上" },
+] as const;
 
 interface Banner {
   id: string;
@@ -36,10 +51,13 @@ interface CampaignWithCount {
 export default function HomePage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const [campaigns, setCampaigns] = useState<CampaignWithCount[]>([]);
+  const [allCampaigns, setAllCampaigns] = useState<CampaignWithCount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [featuredCategories, setFeaturedCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("all");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,7 +66,6 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // 배너 가져오기
       const { data: bannersData } = await supabase
         .from("banners")
         .select("*")
@@ -57,7 +74,6 @@ export default function HomePage() {
 
       if (bannersData) setBanners(bannersData);
 
-      // 카테고리 가져오기
       const { data: categoriesData } = await supabase
         .from("categories")
         .select("*")
@@ -65,10 +81,8 @@ export default function HomePage() {
 
       if (categoriesData) {
         setCategories(categoriesData);
-        setFeaturedCategories(categoriesData.filter((c) => c.is_featured));
       }
 
-      // 캠페인 가져오기
       const { data: campaignsData } = await supabase
         .from("campaigns")
         .select(`*, applications(count)`)
@@ -86,9 +100,8 @@ export default function HomePage() {
             const aTotal = a.application_count + (a.bonus_application_count || 0);
             const bTotal = b.application_count + (b.bonus_application_count || 0);
             return bTotal - aTotal;
-          })
-          .slice(0, 6);
-        setCampaigns(campaignsWithCount);
+          });
+        setAllCampaigns(campaignsWithCount);
       }
 
       setLoading(false);
@@ -96,6 +109,40 @@ export default function HomePage() {
 
     fetchData();
   }, []);
+
+  const deliveryCategoryId = useMemo(() => {
+    const cat = categories.find(
+      (c) => c.name_ko === "배송" || c.name_ko === "배송형"
+    );
+    return cat?.id || null;
+  }, [categories]);
+
+  const filteredCampaigns = useMemo(() => {
+    let filtered = allCampaigns;
+
+    if (selectedRegion !== "all") {
+      filtered = filtered.filter((c) => c.region === selectedRegion);
+    }
+
+    if (selectedType === "delivery" && deliveryCategoryId) {
+      filtered = filtered.filter((c) => c.category === deliveryCategoryId);
+    } else if (selectedType === "experience" && deliveryCategoryId) {
+      filtered = filtered.filter((c) => c.category !== deliveryCategoryId);
+    }
+
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((c) => c.category === selectedCategory);
+    }
+
+    return filtered.slice(0, 6);
+  }, [allCampaigns, selectedRegion, selectedType, selectedCategory, deliveryCategoryId]);
+
+  const featuredCategories = useMemo(
+    () => categories.filter((c) => c.is_featured),
+    [categories]
+  );
+
+  const displayCategories = showAllCategories ? categories : featuredCategories;
 
   // 배너 자동 슬라이드
   useEffect(() => {
@@ -206,29 +253,108 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Category Section */}
-      {featuredCategories.length > 0 && (
-        <section className="border-b bg-white py-6">
+      {/* Filter Section */}
+      <section className="border-b bg-white">
+        {/* 캠페인 유형 (배송형/체험형) */}
+        <div className="border-b">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center gap-6 md:gap-10">
-              {featuredCategories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/campaigns?category=${category.id}`}
-                  className="group flex flex-col items-center gap-2"
+            <div className="flex items-center gap-1 overflow-x-auto py-3 scrollbar-hide">
+              {CAMPAIGN_TYPES.map((type) => (
+                <button
+                  key={type.value}
+                  onClick={() => setSelectedType(type.value)}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                    selectedType === type.value
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
                 >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 text-2xl transition-all group-hover:bg-primary/10 md:h-16 md:w-16">
-                    {category.icon || "📦"}
-                  </div>
-                  <span className="text-xs font-medium text-gray-600 group-hover:text-primary md:text-sm">
-                    {category.name_zh}
-                  </span>
-                </Link>
+                  <span>{type.icon}</span>
+                  <span>{type.label_zh}</span>
+                </button>
               ))}
             </div>
           </div>
-        </section>
-      )}
+        </div>
+
+        {/* 지역 필터 */}
+        <div className="border-b">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center gap-1 overflow-x-auto py-3 scrollbar-hide">
+              <MapPin className="mr-1 h-4 w-4 shrink-0 text-gray-400" />
+              {FEATURED_REGIONS.map((region) => (
+                <button
+                  key={region.value}
+                  onClick={() => setSelectedRegion(region.value)}
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${
+                    selectedRegion === region.value
+                      ? "bg-primary/10 text-primary"
+                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                  }`}
+                >
+                  {region.label_zh}
+                </button>
+              ))}
+              <Link
+                href="/campaigns"
+                className="shrink-0 rounded-full px-3.5 py-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                更多 &rarr;
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* 카테고리 */}
+        <div className="container mx-auto px-4 py-5">
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+            {displayCategories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() =>
+                  setSelectedCategory(
+                    selectedCategory === category.id ? "all" : category.id
+                  )
+                }
+                className="group flex flex-col items-center gap-1.5"
+              >
+                <div
+                  className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl transition-all md:h-16 md:w-16 ${
+                    selectedCategory === category.id
+                      ? "bg-primary/10 ring-2 ring-primary"
+                      : "bg-gray-50 group-hover:bg-primary/5"
+                  }`}
+                >
+                  {category.icon || "📦"}
+                </div>
+                <span
+                  className={`text-xs font-medium md:text-sm ${
+                    selectedCategory === category.id
+                      ? "text-primary"
+                      : "text-gray-600 group-hover:text-primary"
+                  }`}
+                >
+                  {category.name_zh}
+                </span>
+              </button>
+            ))}
+          </div>
+          {categories.length > featuredCategories.length && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowAllCategories(!showAllCategories)}
+                className="flex items-center gap-1 rounded-full border border-gray-200 px-4 py-1.5 text-xs font-medium text-gray-500 transition-all hover:border-primary hover:text-primary"
+              >
+                {showAllCategories ? (
+                  <>收起 <ChevronUp className="h-3.5 w-3.5" /></>
+                ) : (
+                  <>全部分類 <ChevronDown className="h-3.5 w-3.5" /></>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Campaign List Section */}
       <section className="py-8 md:py-12">
@@ -243,9 +369,9 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {campaigns.length > 0 ? (
+          {filteredCampaigns.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {campaigns.map((campaign) => (
+              {filteredCampaigns.map((campaign) => (
                 <CampaignCard
                   key={campaign.id}
                   campaign={campaign as any}
@@ -255,7 +381,8 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="rounded-2xl border border-gray-200 bg-white py-16 text-center">
-              <p className="text-gray-500">目前沒有進行中的活動</p>
+              <p className="mb-1 text-lg font-medium text-gray-900">找不到相關活動</p>
+              <p className="text-gray-500">請嘗試其他篩選條件</p>
             </div>
           )}
         </div>
