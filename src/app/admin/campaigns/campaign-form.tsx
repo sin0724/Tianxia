@@ -503,6 +503,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
                 type="date"
                 {...register("experience_date")}
               />
+              <p className="text-xs text-gray-500">신청 마감 전이어도 OK</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="review_deadline">후기 마감일</Label>
