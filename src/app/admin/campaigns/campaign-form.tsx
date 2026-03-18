@@ -270,8 +270,8 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
       const supabase = createClient();
 
       const campaignData = {
-        category: data.category || null,
-        region: data.region || null,
+        category: data.category || "",
+        region: data.region || "",
         platforms: selectedPlatforms,
         thumbnail_url: thumbnailUrl || null,
         map_url: mapUrl || null,
