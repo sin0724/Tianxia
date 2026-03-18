@@ -1,9 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 export interface CampaignTranslationInput {
   title_ko: string;
   brand_name_ko: string;
@@ -27,15 +23,36 @@ export interface CampaignTranslationOutput {
 export async function translateCampaignToZhTw(
   input: CampaignTranslationInput
 ): Promise<CampaignTranslationOutput> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("ANTHROPIC_API_KEY가 설정되지 않았습니다. .env.local 파일을 확인해주세요.");
+  }
+
+  const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+
   const fieldsToTranslate = {
-    title: input.title_ko,
-    brand_name: input.brand_name_ko,
-    summary: input.summary_ko,
-    description: input.description_ko,
-    benefits: input.benefits_ko,
-    requirements: input.requirements_ko,
-    ...(input.precautions_ko && { precautions: input.precautions_ko }),
+    title: input.title_ko || "",
+    brand_name: input.brand_name_ko || "",
+    summary: input.summary_ko || "",
+    description: input.description_ko || "",
+    benefits: input.benefits_ko || "",
+    requirements: input.requirements_ko || "",
+    ...(input.precautions_ko ? { precautions: input.precautions_ko } : {}),
   };
+
+  const hasContent = Object.values(fieldsToTranslate).some((v) => v.trim() !== "");
+  if (!hasContent) {
+    return {
+      title_zh_tw: "",
+      brand_name_zh_tw: "",
+      summary_zh_tw: "",
+      description_zh_tw: "",
+      benefits_zh_tw: "",
+      requirements_zh_tw: "",
+      precautions_zh_tw: null,
+    };
+  }
 
   const prompt = `你是一位專業的韓文到繁體中文翻譯專家。請將以下韓文內容翻譯成台灣繁體中文。
 
@@ -49,35 +66,55 @@ export async function translateCampaignToZhTw(
 
 ${JSON.stringify(fieldsToTranslate, null, 2)}`;
 
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 4096,
-    messages: [
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-  });
-
-  const responseText =
-    message.content[0].type === "text" ? message.content[0].text : "";
-
-  // Parse JSON response
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse translation response");
+  let message;
+  try {
+    message = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4096,
+      messages: [{ role: "user", content: prompt }],
+    });
+  } catch (apiError: unknown) {
+    const err = apiError as { status?: number; message?: string; error?: { message?: string } };
+    if (err.status === 401) {
+      throw new Error("Anthropic API 인증 실패: API 키가 유효하지 않습니다.");
+    }
+    if (err.status === 429) {
+      throw new Error("Anthropic API 요청 한도 초과: 잠시 후 다시 시도해주세요.");
+    }
+    if (err.status === 529) {
+      throw new Error("Anthropic API 서버 과부하: 잠시 후 다시 시도해주세요.");
+    }
+    throw new Error(
+      `Anthropic API 호출 실패 (${err.status || "unknown"}): ${err.error?.message || err.message || "알 수 없는 오류"}`
+    );
   }
 
-  const translated = JSON.parse(jsonMatch[0]);
+  const responseText =
+    message.content[0]?.type === "text" ? message.content[0].text : "";
+
+  if (!responseText) {
+    throw new Error("번역 API가 빈 응답을 반환했습니다.");
+  }
+
+  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error(`번역 응답을 JSON으로 파싱할 수 없습니다. 응답: ${responseText.slice(0, 200)}`);
+  }
+
+  let translated;
+  try {
+    translated = JSON.parse(jsonMatch[0]);
+  } catch {
+    throw new Error(`번역 JSON 파싱 실패. 응답: ${jsonMatch[0].slice(0, 200)}`);
+  }
 
   return {
-    title_zh_tw: translated.title,
-    brand_name_zh_tw: translated.brand_name,
-    summary_zh_tw: translated.summary,
-    description_zh_tw: translated.description,
-    benefits_zh_tw: translated.benefits,
-    requirements_zh_tw: translated.requirements,
+    title_zh_tw: translated.title || "",
+    brand_name_zh_tw: translated.brand_name || "",
+    summary_zh_tw: translated.summary || "",
+    description_zh_tw: translated.description || "",
+    benefits_zh_tw: translated.benefits || "",
+    requirements_zh_tw: translated.requirements || "",
     precautions_zh_tw: translated.precautions || null,
   };
 }

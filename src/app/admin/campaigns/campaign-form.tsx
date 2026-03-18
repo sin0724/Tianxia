@@ -33,6 +33,8 @@ interface CampaignFormProps {
 export function CampaignForm({ campaign }: CampaignFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingWithoutTranslation, setIsSavingWithoutTranslation] = useState(false);
+  const [translationError, setTranslationError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
@@ -190,7 +192,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
     }
   };
 
-  const onSubmit = async (data: CampaignInput) => {
+  const saveCampaign = async (data: CampaignInput, skipTranslation = false) => {
     if (selectedPlatforms.length === 0) {
       toast({
         title: "오류",
@@ -200,32 +202,70 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
       return;
     }
 
-    setIsLoading(true);
+    if (skipTranslation) {
+      setIsSavingWithoutTranslation(true);
+    } else {
+      setIsLoading(true);
+    }
+    setTranslationError(null);
 
     try {
       const guideText = data.guide_ko || "";
       const summaryText = guideText.split("\n")[0]?.slice(0, 100) || "";
       const descriptionText = guideText;
 
-      const translateResponse = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title_ko: data.title_ko || "",
-          brand_name_ko: data.brand_name_ko || "",
-          summary_ko: summaryText,
-          description_ko: descriptionText,
-          benefits_ko: data.benefits_ko || "",
-          requirements_ko: data.requirements_ko || "",
-          precautions_ko: data.precautions_ko || "",
-        }),
-      });
+      let translations = {};
 
-      if (!translateResponse.ok) {
-        throw new Error("번역 실패");
+      if (!skipTranslation) {
+        try {
+          const translateResponse = await fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title_ko: data.title_ko || "",
+              brand_name_ko: data.brand_name_ko || "",
+              summary_ko: summaryText,
+              description_ko: descriptionText,
+              benefits_ko: data.benefits_ko || "",
+              requirements_ko: data.requirements_ko || "",
+              precautions_ko: data.precautions_ko || "",
+            }),
+          });
+
+          if (!translateResponse.ok) {
+            const errorBody = await translateResponse.json().catch(() => ({}));
+            const errorMsg = errorBody.error || `번역 서버 오류 (HTTP ${translateResponse.status})`;
+            setTranslationError(errorMsg);
+            toast({
+              title: "번역 실패",
+              description: `${errorMsg}\n\n아래 "번역 없이 저장" 버튼으로 한국어만 저장할 수 있습니다.`,
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const translationResult = await translateResponse.json();
+          if (translationResult.error) {
+            setTranslationError(translationResult.error);
+            toast({
+              title: "번역 실패",
+              description: `${translationResult.error}\n\n아래 "번역 없이 저장" 버튼으로 한국어만 저장할 수 있습니다.`,
+              variant: "destructive",
+            });
+            return;
+          }
+          translations = translationResult;
+        } catch (fetchError) {
+          const msg = fetchError instanceof Error ? fetchError.message : "네트워크 오류";
+          setTranslationError(`번역 요청 실패: ${msg}`);
+          toast({
+            title: "번역 요청 실패",
+            description: `${msg}\n\n인터넷 연결을 확인하거나 "번역 없이 저장" 버튼을 사용해주세요.`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
-
-      const translations = await translateResponse.json();
 
       const supabase = createClient();
 
@@ -263,41 +303,60 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           .update(campaignData)
           .eq("id", campaign.id);
 
-        if (error) throw error;
+        if (error) {
+          throw new Error(`DB 저장 실패: ${error.message} (코드: ${error.code})`);
+        }
 
         toast({
           title: "수정 완료",
-          description: "캠페인이 수정되었습니다",
+          description: skipTranslation
+            ? "캠페인이 번역 없이 수정되었습니다 (나중에 수정하여 번역 가능)"
+            : "캠페인이 수정되었습니다",
         });
       } else {
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
+        if (!user) {
+          throw new Error("로그인이 만료되었습니다. 다시 로그인해주세요.");
+        }
+
         const { error } = await supabase.from("campaigns").insert({
           ...campaignData,
-          created_by: user?.id,
+          created_by: user.id,
         });
 
-        if (error) throw error;
+        if (error) {
+          throw new Error(`DB 저장 실패: ${error.message} (코드: ${error.code})`);
+        }
 
         toast({
           title: "생성 완료",
-          description: "캠페인이 생성되었습니다",
+          description: skipTranslation
+            ? "캠페인이 번역 없이 생성되었습니다 (나중에 수정하여 번역 가능)"
+            : "캠페인이 생성되었습니다",
         });
       }
 
+      setTranslationError(null);
       router.push("/admin/campaigns");
       router.refresh();
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "알 수 없는 오류";
       toast({
-        title: "오류 발생",
-        description: error instanceof Error ? error.message : "알 수 없는 오류",
+        title: "저장 실패",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+      setIsSavingWithoutTranslation(false);
     }
+  };
+
+  const onSubmit = async (data: CampaignInput) => {
+    await saveCampaign(data, false);
   };
 
   const selectedCategory = watch("category");
@@ -620,8 +679,31 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         </CardContent>
       </Card>
 
+      {translationError && (
+        <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+          <p className="mb-1 text-sm font-semibold text-orange-800">번역 오류</p>
+          <p className="mb-3 text-sm text-orange-700">{translationError}</p>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSavingWithoutTranslation}
+            onClick={() => handleSubmit((data) => saveCampaign(data, true))()}
+            className="border-orange-300 text-orange-700 hover:bg-orange-100"
+          >
+            {isSavingWithoutTranslation ? (
+              <>
+                <LoadingSpinner size="sm" />
+                <span className="ml-2">저장 중...</span>
+              </>
+            ) : (
+              "번역 없이 저장하기"
+            )}
+          </Button>
+        </div>
+      )}
+
       <div className="flex gap-4">
-        <Button type="submit" disabled={isLoading || isUploading}>
+        <Button type="submit" disabled={isLoading || isUploading || isSavingWithoutTranslation}>
           {isLoading ? (
             <>
               <LoadingSpinner size="sm" />
