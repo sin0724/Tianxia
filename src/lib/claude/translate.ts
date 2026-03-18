@@ -50,7 +50,7 @@ export async function translateCampaignToZhTw(
       description_zh_tw: "",
       benefits_zh_tw: "",
       requirements_zh_tw: "",
-      precautions_zh_tw: null,
+      precautions_zh_tw: undefined,
     };
   }
 
