@@ -213,33 +213,33 @@ export default function CampaignsPage() {
   const currentCategory = selectedCategory !== "all" ? categories.find((c) => c.id === selectedCategory) : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">
             {currentCategory ? currentCategory.name_zh : "體驗活動"}
           </h1>
-          <p className="text-gray-500">
+          <p className="text-sm text-gray-400 mt-1">
             探索並申請您感興趣的體驗團活動
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="mb-6 flex gap-2">
+        <div className="mb-5 flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               placeholder="搜尋活動名稱或品牌..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-11 border-gray-200 focus:border-primary/50 focus:ring-primary/20"
             />
           </div>
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className={showFilters ? "bg-primary text-white" : ""}
+            className={`h-11 px-4 border-gray-200 transition-all ${showFilters ? "bg-primary text-white border-primary shadow-sm shadow-primary/20" : "hover:border-gray-300"}`}
           >
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
@@ -247,7 +247,7 @@ export default function CampaignsPage() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="mb-6 rounded-xl border bg-white p-4">
+          <div className="mb-5 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Category */}
               <div>
@@ -351,19 +351,19 @@ export default function CampaignsPage() {
         )}
 
         {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-500">
+        <div className="mb-4 text-xs font-medium text-gray-400">
           共 {campaigns.length} 個活動
         </div>
 
         {/* Campaign Grid */}
         {loading ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <CampaignCardSkeleton key={i} />
             ))}
           </div>
         ) : campaigns.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {campaigns.map((campaign) => (
               <CampaignCard
                 key={campaign.id}
@@ -373,12 +373,12 @@ export default function CampaignsPage() {
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white py-16 text-center">
-            <p className="mb-2 text-lg font-medium text-gray-900">
+          <div className="rounded-2xl border border-gray-100 bg-white py-16 text-center shadow-sm">
+            <p className="mb-1.5 text-base font-semibold text-gray-900">
               找不到符合條件的活動
             </p>
-            <p className="mb-4 text-gray-500">請嘗試其他搜尋條件</p>
-            <Button variant="outline" onClick={clearFilters}>
+            <p className="mb-5 text-sm text-gray-400">請嘗試其他搜尋條件</p>
+            <Button variant="outline" onClick={clearFilters} className="border-gray-200">
               清除篩選條件
             </Button>
           </div>

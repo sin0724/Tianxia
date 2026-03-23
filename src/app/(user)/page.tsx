@@ -194,7 +194,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/50">
       {/* Hero Banner Section */}
       <section className="relative bg-white">
         <div className="relative h-[280px] w-full overflow-hidden md:h-[400px]">
@@ -276,18 +276,18 @@ export default function HomePage() {
       </section>
 
       {/* Filter Section */}
-      <section className="border-b bg-white">
+      <section className="border-b border-gray-100 bg-white shadow-sm">
         {/* 캠페인 유형 (배송형/체험형) */}
-        <div className="border-b">
+        <div className="border-b border-gray-100">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-1 overflow-x-auto py-3 scrollbar-hide">
+            <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
               {CAMPAIGN_TYPES.map((type) => (
                 <button
                   key={type.value}
                   onClick={() => setSelectedType(type.value)}
                   className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
                     selectedType === type.value
-                      ? "bg-primary text-white shadow-sm"
+                      ? "bg-primary text-white shadow-sm shadow-primary/20"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
@@ -300,17 +300,17 @@ export default function HomePage() {
         </div>
 
         {/* 지역 필터 */}
-        <div className="border-b">
+        <div className="border-b border-gray-100">
           <div className="container mx-auto px-4 py-3">
             <div className="flex flex-wrap items-center gap-1">
-              <MapPin className="mr-1 h-4 w-4 shrink-0 text-gray-400" />
+              <MapPin className="mr-1 h-3.5 w-3.5 shrink-0 text-gray-400" />
               {(showAllRegions ? ALL_REGIONS : FEATURED_REGIONS).map((region) => (
                 <button
                   key={region.value}
                   onClick={() => setSelectedRegion(region.value)}
-                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
                     selectedRegion === region.value
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/10 text-primary font-semibold"
                       : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                   }`}
                 >
@@ -319,7 +319,7 @@ export default function HomePage() {
               ))}
               <button
                 onClick={() => setShowAllRegions(!showAllRegions)}
-                className="shrink-0 flex items-center gap-0.5 rounded-full px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className="shrink-0 flex items-center gap-0.5 rounded-full px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
               >
                 {showAllRegions ? (
                   <>收起 <ChevronUp className="h-3.5 w-3.5" /></>
@@ -333,7 +333,7 @@ export default function HomePage() {
 
         {/* 카테고리 */}
         <div className="container mx-auto px-4 py-5">
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-5">
             {displayCategories.map((category) => (
               <button
                 key={category.id}
@@ -345,18 +345,18 @@ export default function HomePage() {
                 className="group flex flex-col items-center gap-1.5"
               >
                 <div
-                  className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl transition-all md:h-16 md:w-16 ${
+                  className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl transition-all duration-200 md:h-16 md:w-16 ${
                     selectedCategory === category.id
-                      ? "bg-primary/10 ring-2 ring-primary"
-                      : "bg-gray-50 group-hover:bg-primary/5"
+                      ? "bg-primary/10 ring-2 ring-primary scale-105"
+                      : "bg-gray-50 border border-gray-100 group-hover:bg-primary/5 group-hover:border-primary/20 group-hover:scale-105"
                   }`}
                 >
                   {category.icon || "📦"}
                 </div>
                 <span
-                  className={`text-xs font-medium md:text-sm ${
+                  className={`text-xs font-medium transition-colors md:text-sm ${
                     selectedCategory === category.id
-                      ? "text-primary"
+                      ? "text-primary font-semibold"
                       : "text-gray-600 group-hover:text-primary"
                   }`}
                 >
@@ -386,35 +386,38 @@ export default function HomePage() {
       <section className="py-8 md:py-12">
         <div className="container mx-auto px-4">
           <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 rounded-full bg-white border border-gray-100 p-1 shadow-sm">
               <button
                 onClick={() => setSortBy("popular")}
-                className={`text-lg font-bold transition-colors ${
-                  sortBy === "popular" ? "text-gray-900" : "text-gray-300 hover:text-gray-500"
+                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
+                  sortBy === "popular"
+                    ? "bg-gray-900 text-white shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
                 }`}
               >
                 人氣活動
               </button>
-              <span className="text-gray-200">|</span>
               <button
                 onClick={() => setSortBy("latest")}
-                className={`text-lg font-bold transition-colors ${
-                  sortBy === "latest" ? "text-gray-900" : "text-gray-300 hover:text-gray-500"
+                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
+                  sortBy === "latest"
+                    ? "bg-gray-900 text-white shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
                 }`}
               >
                 最新活動
               </button>
             </div>
             <Link href="/campaigns">
-              <Button variant="ghost" className="gap-2 text-gray-500 hover:text-primary">
+              <Button variant="ghost" className="gap-1.5 text-sm text-gray-400 hover:text-primary px-3">
                 查看全部
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
           </div>
 
           {filteredCampaigns.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCampaigns.map((campaign) => (
                 <CampaignCard
                   key={campaign.id}
@@ -424,9 +427,9 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-gray-200 bg-white py-16 text-center">
-              <p className="mb-1 text-lg font-medium text-gray-900">找不到相關活動</p>
-              <p className="text-gray-500">請嘗試其他篩選條件</p>
+            <div className="rounded-2xl border border-gray-100 bg-white py-16 text-center shadow-sm">
+              <p className="mb-1 text-base font-semibold text-gray-900">找不到相關活動</p>
+              <p className="text-sm text-gray-400">請嘗試其他篩選條件</p>
             </div>
           )}
         </div>

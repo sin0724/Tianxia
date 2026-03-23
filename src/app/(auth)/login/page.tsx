@@ -74,7 +74,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
+    <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg shadow-gray-200/60 ring-1 ring-gray-100">
       <div className="mb-8 text-center">
         <Image
           src="/logo.png"
@@ -84,7 +84,7 @@ function LoginForm() {
           className="mx-auto mb-4 h-10 w-auto"
         />
         <h1 className="text-2xl font-bold text-gray-900">登入</h1>
-        <p className="mt-2 text-sm text-gray-500">登入您的天下帳戶</p>
+        <p className="mt-1.5 text-sm text-gray-400">登入您的天下帳戶</p>
       </div>
 
       {/* Social Login Buttons */}
@@ -189,7 +189,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4">
       <Suspense fallback={<LoadingSpinner size="lg" />}>
         <LoginForm />
       </Suspense>

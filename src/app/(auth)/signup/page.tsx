@@ -69,14 +69,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-12">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg shadow-gray-200/60 ring-1 ring-gray-100">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white font-bold">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white font-bold text-lg shadow-md shadow-primary/20">
             天
           </div>
           <h1 className="text-2xl font-bold text-gray-900">註冊</h1>
-          <p className="mt-2 text-sm text-gray-500">建立您的天下帳戶</p>
+          <p className="mt-1.5 text-sm text-gray-400">建立您的天下帳戶</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

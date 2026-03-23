@@ -100,27 +100,30 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
 
   return (
     <Link href={`/campaigns/${campaign.id}`}>
-      <div className="group overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all hover:shadow-lg">
-        <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+      <div className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-xl hover:shadow-gray-200/70 hover:-translate-y-0.5">
+        <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
           {campaign.thumbnail_url ? (
             <Image
               src={campaign.thumbnail_url}
               alt={campaign.title_zh_tw || campaign.title_ko}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full items-center justify-center">
-              <span className="text-5xl">🎁</span>
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+              <span className="text-5xl opacity-60">🎁</span>
             </div>
           )}
-          
+
+          {/* Bottom gradient overlay */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 to-transparent" />
+
           {/* Platform Badges */}
           <div className="absolute left-3 top-3 flex gap-1">
             {platforms.map((platform) => (
               <div
                 key={platform}
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-white ${getPlatformColor(platform)}`}
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-white shadow-sm ${getPlatformColor(platform)}`}
               >
                 <PlatformIcon platform={platform} size="sm" />
               </div>
@@ -129,17 +132,17 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
 
           {/* D-Day Badge */}
           {daysRemaining <= 3 && daysRemaining > 0 && (
-            <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">
+            <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-sm">
               D-{daysRemaining}
             </div>
           )}
           {daysRemaining <= 0 && (
-            <div className="absolute right-3 top-3 rounded-full bg-gray-500 px-3 py-1 text-xs font-medium text-white">
+            <div className="absolute right-3 top-3 rounded-full bg-gray-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">
               已截止
             </div>
           )}
         </div>
-        <div className="p-5">
+        <div className="p-4">
           {/* 모집 현황 프로그레스 바 */}
           <div className="mb-3">
             <div className="mb-1.5 flex items-center justify-between">
@@ -153,41 +156,38 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
               </div>
               <span className="flex items-center gap-1 text-xs font-semibold">
                 <span className="text-primary">{displayCount}</span>
-                <span className="text-gray-300">/</span>
-                <span className="text-gray-500">{recruitmentCount}名</span>
+                <span className="text-gray-200">/</span>
+                <span className="text-gray-400">{recruitmentCount}名</span>
               </span>
             </div>
-            <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100">
-              <div 
+            <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
                 className={`absolute left-0 top-0 h-full rounded-full transition-all duration-500 ${getProgressColor(percentage)}`}
                 style={{ width: `${Math.min(percentage, 100)}%` }}
               />
-              {percentage > 100 && (
-                <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-              )}
             </div>
           </div>
 
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-1.5 flex items-center gap-2">
             {category && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+              <span className="rounded-full bg-gray-50 border border-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-500">
                 {category.icon} {categoryLabel}
               </span>
             )}
           </div>
-          <p className="mb-1 text-xs text-gray-400">
+          <p className="mb-0.5 text-xs font-medium text-gray-400">
             {campaign.brand_name_zh_tw || campaign.brand_name_ko}
           </p>
-          <h3 className="mb-3 line-clamp-2 text-base font-semibold leading-tight text-gray-900">
+          <h3 className="mb-3 line-clamp-2 text-sm font-bold leading-snug text-gray-900 group-hover:text-primary transition-colors">
             {campaign.title_zh_tw || campaign.title_ko}
           </h3>
           <div className="flex flex-wrap gap-3 text-xs text-gray-400">
             <span className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
+              <MapPin className="h-3 w-3" />
               {getRegionLabel(campaign.region)}
             </span>
             <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
+              <Calendar className="h-3 w-3" />
               ~{formatDate(campaign.application_deadline)}
             </span>
           </div>

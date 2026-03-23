@@ -40,7 +40,7 @@ export function Header({ user }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center">
           <Image
@@ -111,7 +111,7 @@ export function Header({ user }: HeaderProps) {
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm" className="rounded-full px-6 bg-primary hover:bg-primary/90">
+                <Button size="sm" className="rounded-full px-6 bg-primary hover:bg-primary/90 shadow-sm shadow-primary/20">
                   註冊
                 </Button>
               </Link>
@@ -135,7 +135,7 @@ export function Header({ user }: HeaderProps) {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="border-t bg-white md:hidden">
+        <div className="border-t border-gray-100 bg-white md:hidden">
           <nav className="container mx-auto flex flex-col gap-2 px-4 py-4">
             {navItems.map((item) => (
               <Link
