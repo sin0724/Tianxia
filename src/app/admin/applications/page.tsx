@@ -41,7 +41,7 @@ type StatusFilter = "all" | "pending" | "approved" | "rejected";
 export default function AdminApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [searchQuery, setSearchQuery] = useState("");
 
   const supabase = createClient();
@@ -306,7 +306,7 @@ export default function AdminApplicationsPage() {
                   </div>
 
                   {application.status === "pending" && (
-                    <ApplicationActions applicationId={application.id} />
+                    <ApplicationActions applicationId={application.id} onStatusChange={fetchApplications} />
                   )}
 
                   {application.admin_note && (

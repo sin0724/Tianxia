@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +11,10 @@ import { Check, X } from "lucide-react";
 
 interface ApplicationActionsProps {
   applicationId: string;
+  onStatusChange?: () => void;
 }
 
-export function ApplicationActions({ applicationId }: ApplicationActionsProps) {
-  const router = useRouter();
+export function ApplicationActions({ applicationId, onStatusChange }: ApplicationActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [adminNote, setAdminNote] = useState("");
 
@@ -50,8 +49,8 @@ export function ApplicationActions({ applicationId }: ApplicationActionsProps) {
           : "신청이 반려되었습니다",
     });
 
-    router.refresh();
     setIsLoading(false);
+    onStatusChange?.();
   };
 
   return (
