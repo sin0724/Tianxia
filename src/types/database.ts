@@ -66,6 +66,7 @@ export type Database = {
           region: string;
           thumbnail_url: string | null;
           recruitment_count: number;
+          bonus_application_count: number;
           application_deadline: string;
           experience_date: string;
           review_deadline: string;
@@ -84,6 +85,8 @@ export type Database = {
           benefits_zh_tw: string | null;
           requirements_zh_tw: string | null;
           precautions_zh_tw: string | null;
+          map_url: string | null;
+          platforms: string[];
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -94,6 +97,7 @@ export type Database = {
           region: string;
           thumbnail_url?: string | null;
           recruitment_count?: number;
+          bonus_application_count?: number;
           application_deadline: string;
           experience_date: string;
           review_deadline: string;
@@ -112,6 +116,8 @@ export type Database = {
           benefits_zh_tw?: string | null;
           requirements_zh_tw?: string | null;
           precautions_zh_tw?: string | null;
+          map_url?: string | null;
+          platforms?: string[];
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -122,6 +128,7 @@ export type Database = {
           region?: string;
           thumbnail_url?: string | null;
           recruitment_count?: number;
+          bonus_application_count?: number;
           application_deadline?: string;
           experience_date?: string;
           review_deadline?: string;
@@ -140,6 +147,8 @@ export type Database = {
           benefits_zh_tw?: string | null;
           requirements_zh_tw?: string | null;
           precautions_zh_tw?: string | null;
+          map_url?: string | null;
+          platforms?: string[];
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

@@ -109,8 +109,8 @@ export default function CampaignsPage() {
 
     let processedCampaigns = (data || []).map((campaign) => ({
       ...campaign,
-      application_count: campaign.applications?.[0]?.count || 0,
-      bonus_application_count: campaign.bonus_application_count || 0,
+      application_count: (campaign as any).applications?.[0]?.count ?? 0,
+      bonus_application_count: campaign.bonus_application_count ?? 0,
     }));
 
     // Sort

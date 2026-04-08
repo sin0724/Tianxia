@@ -6,7 +6,7 @@ import { getRegionLabel } from "@/constants/regions";
 import type { Campaign, Category } from "@/types/database";
 
 interface CampaignCardProps {
-  campaign: Campaign & { application_count?: number; bonus_application_count?: number };
+  campaign: Campaign & { application_count?: number };
   categories?: Category[];
 }
 
@@ -88,8 +88,8 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
   const daysRemaining = getDaysRemaining(campaign.application_deadline);
   const category = categories?.find((c) => c.id === campaign.category);
   const categoryLabel = category ? category.name_zh : "";
-  const realCount = campaign.application_count || 0;
-  const bonusCount = campaign.bonus_application_count || 0;
+  const realCount = campaign.application_count ?? 0;
+  const bonusCount = campaign.bonus_application_count ?? 0;
   const displayCount = realCount + bonusCount;
   const platforms: string[] = (campaign as any).platforms || ["instagram"];
   

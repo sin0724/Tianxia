@@ -50,7 +50,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
     (campaign as any)?.map_url || ""
   );
   const [bonusCount, setBonusCount] = useState<number>(
-    (campaign as any)?.bonus_application_count || 0
+    campaign?.bonus_application_count ?? 0
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = !!campaign;
@@ -307,6 +307,12 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           throw new Error(`DB 저장 실패: ${error.message} (코드: ${error.code})`);
         }
 
+        await fetch("/api/revalidate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ campaignId: campaign.id }),
+        });
+
         toast({
           title: "수정 완료",
           description: skipTranslation
@@ -330,6 +336,12 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         if (error) {
           throw new Error(`DB 저장 실패: ${error.message} (코드: ${error.code})`);
         }
+
+        await fetch("/api/revalidate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
 
         toast({
           title: "생성 완료",
