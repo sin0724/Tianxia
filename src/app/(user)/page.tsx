@@ -65,7 +65,7 @@ export default function HomePage() {
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortBy, setSortBy] = useState<"popular" | "latest">("popular");
+  const [sortBy, setSortBy] = useState<"popular" | "latest">("latest");
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -95,20 +95,15 @@ export default function HomePage() {
         .from("campaigns")
         .select(`*, applications(count)`)
         .eq("status", "active")
+        .gte("application_deadline", new Date().toISOString())
         .order("created_at", { ascending: false });
 
       if (campaignsData) {
-        const campaignsWithCount = campaignsData
-          .map((campaign) => ({
-            ...campaign,
-            application_count: campaign.applications?.[0]?.count || 0,
-            bonus_application_count: campaign.bonus_application_count || 0,
-          }))
-          .sort((a, b) => {
-            const aTotal = a.application_count + (a.bonus_application_count || 0);
-            const bTotal = b.application_count + (b.bonus_application_count || 0);
-            return bTotal - aTotal;
-          });
+        const campaignsWithCount = campaignsData.map((campaign) => ({
+          ...campaign,
+          application_count: campaign.applications?.[0]?.count || 0,
+          bonus_application_count: campaign.bonus_application_count || 0,
+        }));
         setAllCampaigns(campaignsWithCount);
       }
 
