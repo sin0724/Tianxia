@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Users } from "lucide-react";
 import { formatDate, getDaysRemaining } from "@/lib/utils";
 import { getRegionLabel } from "@/constants/regions";
 import type { Campaign, Category } from "@/types/database";
@@ -94,11 +94,34 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
   const platforms: string[] = (campaign as any).platforms || ["instagram"];
   const isPremium = (campaign as any).campaign_type === "paid";
   const paymentAmount = (campaign as any).payment_amount as number | null;
+  const paymentDisplayType = (campaign as any).payment_display_type as "amount" | "negotiable" | "after_apply" | undefined;
+
+  const paymentLabel = isPremium
+    ? paymentDisplayType === "negotiable"
+      ? "薪資可議"
+      : paymentDisplayType === "after_apply"
+      ? "申請後洽談"
+      : paymentAmount && paymentAmount > 0
+      ? `NT$${paymentAmount.toLocaleString()}`
+      : null
+    : null;
   
   const recruitmentCount = campaign.recruitment_count || 1;
   const percentage = Math.round((displayCount / recruitmentCount) * 100);
   const remaining = recruitmentCount - displayCount;
   const statusBadge = getStatusBadge(percentage, remaining);
+
+  const platformFollowerReqs = (campaign as any).platform_follower_requirements as Record<string, { min?: number; max?: number }> | null;
+  const followerLines: string[] = [];
+  if (platformFollowerReqs) {
+    const platformNames: Record<string, string> = { instagram: "IG", youtube: "YT", threads: "Threads", facebook: "FB", dcard: "Dcard" };
+    for (const p of platforms) {
+      const req = platformFollowerReqs[p];
+      if (req?.min) {
+        followerLines.push(`${platformNames[p] ?? p} ${req.min >= 10000 ? `${req.min / 10000}萬` : req.min.toLocaleString()}+`);
+      }
+    }
+  }
 
   return (
     <Link href={`/campaigns/${campaign.id}`}>
@@ -194,9 +217,9 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
                 {category.icon} {categoryLabel}
               </span>
             )}
-            {isPremium && paymentAmount && paymentAmount > 0 && (
+            {paymentLabel && (
               <span className="rounded-full bg-yellow-100 border border-yellow-200 px-2.5 py-0.5 text-[11px] font-semibold text-yellow-700">
-                💰 NT${paymentAmount.toLocaleString()}
+                💰 {paymentLabel}
               </span>
             )}
           </div>
@@ -206,6 +229,16 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
           <h3 className="mb-3 line-clamp-2 text-sm font-bold leading-snug text-gray-900 group-hover:text-primary transition-colors">
             {campaign.title_zh_tw || campaign.title_ko}
           </h3>
+          {followerLines.length > 0 && (
+            <div className="mb-2.5 flex flex-wrap gap-1.5">
+              {followerLines.map((line) => (
+                <span key={line} className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-600">
+                  <Users className="h-2.5 w-2.5" />
+                  {line} 追蹤
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap gap-3 text-xs text-gray-400">
             <span className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />

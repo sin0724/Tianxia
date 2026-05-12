@@ -64,6 +64,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
   const [campaignType, setCampaignType] = useState<"free" | "paid">(
     (campaign as any)?.campaign_type ?? "free"
   );
+  const [paymentDisplayType, setPaymentDisplayType] = useState<"amount" | "negotiable" | "after_apply">(
+    (campaign as any)?.payment_display_type ?? "amount"
+  );
   const [platformFollowerReqs, setPlatformFollowerReqs] = useState<
     Record<string, { min: string; max: string }>
   >(() => {
@@ -357,7 +360,8 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           : null,
         status: data.status,
         campaign_type: campaignType,
-        payment_amount: campaignType === "paid" ? (data.payment_amount ?? null) : null,
+        payment_amount: campaignType === "paid" && paymentDisplayType === "amount" ? (data.payment_amount ?? null) : null,
+        payment_display_type: campaignType === "paid" ? paymentDisplayType : "amount",
         min_followers: null,
         platform_follower_requirements: (() => {
           const reqs: Record<string, { min?: number; max?: number }> = {};
@@ -811,18 +815,42 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             </div>
 
             {campaignType === "paid" && (
-              <div className="space-y-1">
-                <Label className="text-sm">협찬비 (NT$)</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-500">NT$</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="예: 6500"
-                    className="flex-1"
-                    {...register("payment_amount", { valueAsNumber: true })}
-                  />
+              <div className="space-y-3 rounded-lg bg-yellow-50/60 p-3">
+                <Label className="text-sm font-semibold text-yellow-800">협찬비 표시 방식</Label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  {([
+                    { value: "amount",      label: "금액 직접 공개",  desc: "NT$ 금액 표시",    icon: "💰" },
+                    { value: "negotiable",  label: "薪資可議",        desc: "협의 가능 표시",   icon: "🤝" },
+                    { value: "after_apply", label: "申請後洽談",      desc: "신청 후 협의 표시", icon: "📩" },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setPaymentDisplayType(opt.value)}
+                      className={`flex-1 rounded-lg border-2 p-2.5 text-left text-xs transition-all ${
+                        paymentDisplayType === opt.value
+                          ? "border-amber-400 bg-amber-100 text-amber-800"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-amber-200"
+                      }`}
+                    >
+                      <div className="text-base">{opt.icon}</div>
+                      <div className="font-semibold">{opt.label}</div>
+                      <div className="mt-0.5 text-gray-400">{opt.desc}</div>
+                    </button>
+                  ))}
                 </div>
+                {paymentDisplayType === "amount" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-500">NT$</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="예: 6500"
+                      className="flex-1 bg-white"
+                      {...register("payment_amount", { valueAsNumber: true })}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

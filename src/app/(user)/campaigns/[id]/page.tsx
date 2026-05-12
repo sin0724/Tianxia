@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, MapPin, Users, Clock, Gift, CheckCircle, Map, Camera } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, Gift, CheckCircle, Map, Camera, DollarSign } from "lucide-react";
 import { formatDate, getDaysRemaining } from "@/lib/utils";
 import { getRegionLabel } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
@@ -91,6 +91,24 @@ export default async function CampaignDetailPage({
   const summary = campaign.summary_zh_tw || campaign.summary_ko;
   const description = campaign.description_zh_tw || campaign.description_ko;
   const rawServiceOptions = (campaign as any).service_options_zh_tw || (campaign as any).service_options;
+  const isPremium = (campaign as any).campaign_type === "paid";
+  const paymentDisplayType = (campaign as any).payment_display_type as "amount" | "negotiable" | "after_apply" | undefined;
+  const paymentAmount = (campaign as any).payment_amount as number | null;
+  const paymentLabel = isPremium
+    ? paymentDisplayType === "negotiable" ? "薪資可議"
+    : paymentDisplayType === "after_apply" ? "申請後洽談"
+    : paymentAmount ? `NT$${paymentAmount.toLocaleString()}` : null
+    : null;
+  const platformFollowerReqs = (campaign as any).platform_follower_requirements as Record<string, { min?: number; max?: number }> | null;
+  const platforms: string[] = (campaign as any).platforms || ["instagram"];
+  const followerLines: string[] = [];
+  if (platformFollowerReqs) {
+    const platformNames: Record<string, string> = { instagram: "Instagram", youtube: "YouTube", threads: "Threads", facebook: "Facebook", dcard: "Dcard" };
+    for (const p of platforms) {
+      const req = platformFollowerReqs[p];
+      if (req?.min) followerLines.push(`${platformNames[p] ?? p} ${req.min >= 10000 ? `${req.min / 10000}萬` : req.min.toLocaleString()}+ 追蹤`);
+    }
+  }
   const serviceOptions = rawServiceOptions
     ? (rawServiceOptions as string).split("\n").map((s: string) => s.trim()).filter(Boolean)
     : null;
@@ -186,6 +204,34 @@ export default async function CampaignDetailPage({
                 </div>
               </CardContent>
             </Card>
+            {paymentLabel && (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <DollarSign className="h-5 w-5 text-yellow-600" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">合作費用</p>
+                    <p className="font-semibold text-yellow-700">{paymentLabel}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {followerLines.length > 0 && (
+              <Card className="sm:col-span-2">
+                <CardContent className="flex items-start gap-3 p-4">
+                  <Users className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">追蹤人數條件</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {followerLines.map((line) => (
+                        <span key={line} className="rounded-full bg-blue-50 border border-blue-100 px-3 py-0.5 text-sm font-semibold text-blue-700">
+                          {line}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* 구글 지도 링크 */}

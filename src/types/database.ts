@@ -73,6 +73,7 @@ export type Database = {
           status: "draft" | "active" | "closed";
           campaign_type: "free" | "paid";
           payment_amount: number | null;
+          payment_display_type: "amount" | "negotiable" | "after_apply";
           min_followers: number | null;
           platform_follower_requirements: Record<string, { min?: number; max?: number }> | null;
           title_ko: string;
@@ -112,6 +113,7 @@ export type Database = {
           status?: "draft" | "active" | "closed";
           campaign_type?: "free" | "paid";
           payment_amount?: number | null;
+          payment_display_type?: "amount" | "negotiable" | "after_apply";
           min_followers?: number | null;
           platform_follower_requirements?: Record<string, { min?: number; max?: number }> | null;
           title_ko: string;
@@ -151,6 +153,7 @@ export type Database = {
           status?: "draft" | "active" | "closed";
           campaign_type?: "free" | "paid";
           payment_amount?: number | null;
+          payment_display_type?: "amount" | "negotiable" | "after_apply";
           min_followers?: number | null;
           platform_follower_requirements?: Record<string, { min?: number; max?: number }> | null;
           title_ko?: string;
