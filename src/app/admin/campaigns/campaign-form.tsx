@@ -24,6 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import { KOREA_REGIONS } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
 import { Upload, X, ImageIcon } from "lucide-react";
+import { KoreaMap } from "@/components/ui/korea-map";
 import type { Campaign, Category } from "@/types/database";
 
 interface CampaignFormProps {
@@ -55,6 +56,16 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
   const [campaignType, setCampaignType] = useState<"free" | "paid">(
     (campaign as any)?.campaign_type ?? "free"
   );
+  const [platformFollowerReqs, setPlatformFollowerReqs] = useState<
+    Record<string, { min: string; max: string }>
+  >(() => {
+    const saved = (campaign as any)?.platform_follower_requirements ?? {};
+    const init: Record<string, { min: string; max: string }> = {};
+    for (const p of ["instagram", "youtube", "threads", "facebook", "dcard"]) {
+      init[p] = { min: String(saved[p]?.min ?? ""), max: String(saved[p]?.max ?? "") };
+    }
+    return init;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = !!campaign;
 
@@ -295,7 +306,20 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         status: data.status,
         campaign_type: campaignType,
         payment_amount: campaignType === "paid" ? (data.payment_amount ?? null) : null,
-        min_followers: data.min_followers ?? null,
+        min_followers: null,
+        platform_follower_requirements: (() => {
+          const reqs: Record<string, { min?: number; max?: number }> = {};
+          for (const platform of selectedPlatforms) {
+            const r = platformFollowerReqs[platform];
+            if (r?.min || r?.max) {
+              reqs[platform] = {
+                ...(r.min ? { min: Number(r.min) } : {}),
+                ...(r.max ? { max: Number(r.max) } : {}),
+              };
+            }
+          }
+          return Object.keys(reqs).length > 0 ? reqs : null;
+        })(),
         title_ko: data.title_ko,
         brand_name_ko: data.brand_name_ko || "",
         summary_ko: summaryText || "",
@@ -392,7 +416,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           <CardTitle>기본 정보</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 items-start">
             <div className="space-y-2">
               <Label htmlFor="category">카테고리</Label>
               <Select
@@ -419,29 +443,37 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="region">지역</Label>
-              <Select
-                value={selectedRegion || ""}
-                onValueChange={(value) => setValue("region", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="지역 선택">
-                    {selectedRegion
-                      ? (() => {
-                          const region = KOREA_REGIONS.find((r) => r.value === selectedRegion);
-                          return region ? `${region.label_ko} (${region.label_zh})` : "지역 선택";
-                        })()
-                      : "지역 선택"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {KOREA_REGIONS.map((region) => (
-                    <SelectItem key={region.value} value={region.value}>
-                      {region.label_ko} ({region.label_zh})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="region">
+                지역
+                {selectedRegion && (
+                  <span className="ml-2 text-xs font-normal text-primary">
+                    ({KOREA_REGIONS.find((r) => r.value === selectedRegion)?.label_ko || selectedRegion})
+                  </span>
+                )}
+              </Label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {[
+                  { value: "nationwide", label: "전국" },
+                  { value: "online", label: "온라인" },
+                ].map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setValue("region", r.value)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                      selectedRegion === r.value
+                        ? "bg-primary text-white"
+                        : "border border-gray-200 text-gray-600 hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+              <KoreaMap
+                selected={selectedRegion || ""}
+                onSelect={(v) => setValue("region", v)}
+              />
             </div>
           </div>
 
@@ -653,39 +685,75 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             </div>
 
             {campaignType === "paid" && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label className="text-sm">협찬비 (₩)</Label>
+              <div className="space-y-1">
+                <Label className="text-sm">협찬비 (NT$)</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-500">NT$</span>
                   <Input
                     type="number"
                     min={0}
-                    placeholder="예: 150000"
+                    placeholder="예: 6500"
+                    className="flex-1"
                     {...register("payment_amount", { valueAsNumber: true })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-sm">최소 팔로워 수</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="예: 5000"
-                    {...register("min_followers", { valueAsNumber: true })}
                   />
                 </div>
               </div>
             )}
 
-            {campaignType === "free" && (
-              <div className="space-y-1">
-                <Label className="text-sm">최소 팔로워 수 (선택)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  placeholder="미입력 시 제한 없음"
-                  {...register("min_followers", { valueAsNumber: true })}
-                />
+            {/* 플랫폼별 팔로워 조건 */}
+            <div className="space-y-3">
+              <Label className="text-sm">
+                플랫폼별 팔로워 조건
+                {campaignType === "free" && <span className="ml-1 text-xs font-normal text-gray-400">(선택)</span>}
+              </Label>
+              <div className="space-y-2">
+                {selectedPlatforms.map((platform) => {
+                  const labels: Record<string, string> = {
+                    instagram: "Instagram 팔로워",
+                    youtube: "YouTube 구독자",
+                    threads: "Threads 팔로워",
+                    facebook: "Facebook 팔로워",
+                    dcard: "Dcard 팔로워",
+                  };
+                  return (
+                    <div key={platform} className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
+                      <span className="w-32 shrink-0 text-xs font-medium text-gray-600">{labels[platform]}</span>
+                      <div className="flex flex-1 items-center gap-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="최소"
+                          className="h-8 text-sm"
+                          value={platformFollowerReqs[platform]?.min ?? ""}
+                          onChange={(e) =>
+                            setPlatformFollowerReqs((prev) => ({
+                              ...prev,
+                              [platform]: { ...prev[platform], min: e.target.value },
+                            }))
+                          }
+                        />
+                        <span className="shrink-0 text-xs text-gray-400">~</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="최대"
+                          className="h-8 text-sm"
+                          value={platformFollowerReqs[platform]?.max ?? ""}
+                          onChange={(e) =>
+                            setPlatformFollowerReqs((prev) => ({
+                              ...prev,
+                              [platform]: { ...prev[platform], max: e.target.value },
+                            }))
+                          }
+                        />
+                        <span className="shrink-0 text-xs text-gray-400">명</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            )}
+              <p className="text-xs text-gray-400">최소만 입력하면 하한선, 최대까지 입력하면 범위 조건</p>
+            </div>
           </div>
         </CardContent>
       </Card>

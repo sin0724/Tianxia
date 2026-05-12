@@ -74,6 +74,7 @@ export type Database = {
           campaign_type: "free" | "paid";
           payment_amount: number | null;
           min_followers: number | null;
+          platform_follower_requirements: Record<string, { min?: number; max?: number }> | null;
           title_ko: string;
           brand_name_ko: string;
           summary_ko: string;
@@ -108,6 +109,7 @@ export type Database = {
           campaign_type?: "free" | "paid";
           payment_amount?: number | null;
           min_followers?: number | null;
+          platform_follower_requirements?: Record<string, { min?: number; max?: number }> | null;
           title_ko: string;
           brand_name_ko: string;
           summary_ko: string;
@@ -142,6 +144,7 @@ export type Database = {
           campaign_type?: "free" | "paid";
           payment_amount?: number | null;
           min_followers?: number | null;
+          platform_follower_requirements?: Record<string, { min?: number; max?: number }> | null;
           title_ko?: string;
           brand_name_ko?: string;
           summary_ko?: string;

@@ -56,8 +56,6 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    console.log("Admin check - user:", user.id, "profile:", profile, "error:", profileError);
-
     if (profile?.role !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/";

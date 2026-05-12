@@ -196,7 +196,7 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
             )}
             {isPremium && paymentAmount && paymentAmount > 0 && (
               <span className="rounded-full bg-yellow-100 border border-yellow-200 px-2.5 py-0.5 text-[11px] font-semibold text-yellow-700">
-                💰 ₩{paymentAmount.toLocaleString()}
+                💰 NT${paymentAmount.toLocaleString()}
               </span>
             )}
           </div>

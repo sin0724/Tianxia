@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let body: CampaignTranslationInput;
+    let rawBody: unknown;
     try {
-      body = await request.json();
+      rawBody = await request.json();
     } catch {
       return NextResponse.json(
         { error: "요청 데이터가 올바르지 않습니다." },
@@ -42,7 +42,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const translations = await translateCampaignToZhTw(body);
+    // 각 필드 최대 길이 검증 (Claude API 과금 남용 방지)
+    const MAX_FIELD_LENGTH = 5000;
+    const textFields = ["title_ko", "brand_name_ko", "summary_ko", "description_ko", "benefits_ko", "requirements_ko", "precautions_ko"] as const;
+    const body = rawBody as Record<string, unknown>;
+    for (const field of textFields) {
+      const val = body[field];
+      if (val !== undefined && val !== null && typeof val !== "string") {
+        return NextResponse.json({ error: `${field} 필드는 문자열이어야 합니다.` }, { status: 400 });
+      }
+      if (typeof val === "string" && val.length > MAX_FIELD_LENGTH) {
+        return NextResponse.json({ error: `${field} 필드가 너무 깁니다 (최대 ${MAX_FIELD_LENGTH}자).` }, { status: 400 });
+      }
+    }
+
+    const translations = await translateCampaignToZhTw(rawBody as CampaignTranslationInput);
 
     return NextResponse.json(translations);
   } catch (error) {

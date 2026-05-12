@@ -17,6 +17,7 @@ import {
 import { Search, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { KOREA_REGIONS } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
+import { KoreaMap } from "@/components/ui/korea-map";
 import type { Category } from "@/types/database";
 
 interface CampaignWithCount {
@@ -264,7 +265,7 @@ export default function CampaignsPage() {
         {/* Filters Panel */}
         {showFilters && (
           <div className="mb-5 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-start">
               {/* Category */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
@@ -290,27 +291,38 @@ export default function CampaignsPage() {
               </div>
 
               {/* Region */}
-              <div>
+              <div className="sm:col-span-2 lg:col-span-4">
                 <label className="mb-2 block text-sm font-medium text-gray-700">
-                  地區
+                  地區選擇
+                  {selectedRegion !== "all" && (
+                    <span className="ml-2 text-primary font-semibold">
+                      ({KOREA_REGIONS.find((r) => r.value === selectedRegion)?.label_zh || selectedRegion})
+                    </span>
+                  )}
                 </label>
-                <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                  <SelectTrigger>
-                    <SelectValue>
-                      {selectedRegion === "all"
-                        ? "全部地區"
-                        : KOREA_REGIONS.find((r) => r.value === selectedRegion)?.label_zh || "全部地區"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部地區</SelectItem>
-                    {KOREA_REGIONS.map((region) => (
-                      <SelectItem key={region.value} value={region.value}>
-                        {region.label_zh}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button
+                    onClick={() => setSelectedRegion("all")}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${selectedRegion === "all" ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                  >
+                    全部地區
+                  </button>
+                  <button
+                    onClick={() => setSelectedRegion("nationwide")}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${selectedRegion === "nationwide" ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                  >
+                    全國
+                  </button>
+                  <button
+                    onClick={() => setSelectedRegion("online")}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${selectedRegion === "online" ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                  >
+                    線上
+                  </button>
+                </div>
+                <div className="max-w-xs">
+                  <KoreaMap selected={selectedRegion} onSelect={setSelectedRegion} />
+                </div>
               </div>
 
               {/* Platform */}

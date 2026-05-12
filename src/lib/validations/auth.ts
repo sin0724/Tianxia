@@ -2,12 +2,16 @@ import { z } from "zod";
 
 export const loginSchema = z.object({
   email: z.string().email("請輸入有效的電子郵件"),
-  password: z.string().min(6, "密碼至少需要6個字符"),
+  password: z.string().min(8, "密碼至少需要8個字符"),
 });
 
 export const signupSchema = z.object({
   email: z.string().email("請輸入有效的電子郵件"),
-  password: z.string().min(6, "密碼至少需要6個字符"),
+  password: z
+    .string()
+    .min(8, "密碼至少需要8個字符")
+    .regex(/[A-Z]/, "密碼需包含至少一個大寫字母")
+    .regex(/[0-9]/, "密碼需包含至少一個數字"),
   confirmPassword: z.string(),
   name: z.string().min(1, "請輸入姓名"),
   line_id: z.string().min(1, "請輸入LINE ID"),

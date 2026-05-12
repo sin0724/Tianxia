@@ -5,9 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { createBrowserClient } from "@supabase/ssr";
 import { CampaignCard } from "@/components/user/campaign-card";
-import { ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, MapPin } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { KOREA_REGIONS } from "@/constants/regions";
+import { KoreaMap } from "@/components/ui/korea-map";
 import type { Category } from "@/types/database";
 
 const CAMPAIGN_TYPES = [
@@ -16,18 +16,10 @@ const CAMPAIGN_TYPES = [
   { value: "delivery", label_zh: "配送型", icon: "📦" },
 ] as const;
 
-const FEATURED_REGIONS = [
+const SPECIAL_REGIONS = [
   { value: "all", label_zh: "全部地區" },
-  { value: "seoul", label_zh: "首爾" },
-  { value: "gyeonggi", label_zh: "京畿道" },
-  { value: "busan", label_zh: "釜山" },
   { value: "nationwide", label_zh: "全國" },
   { value: "online", label_zh: "線上" },
-] as const;
-
-const ALL_REGIONS = [
-  { value: "all", label_zh: "全部地區" },
-  ...KOREA_REGIONS.map((r) => ({ value: r.value, label_zh: r.label_zh })),
 ] as const;
 
 interface Banner {
@@ -64,7 +56,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(false);
-  const [showAllRegions, setShowAllRegions] = useState(false);
+  const [showMapRegion, setShowMapRegion] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -309,8 +301,7 @@ export default function HomePage() {
         <div className="border-b border-gray-100">
           <div className="container mx-auto px-4 py-3">
             <div className="flex flex-wrap items-center gap-1">
-              <MapPin className="mr-1 h-3.5 w-3.5 shrink-0 text-gray-400" />
-              {(showAllRegions ? ALL_REGIONS : FEATURED_REGIONS).map((region) => (
+              {SPECIAL_REGIONS.map((region) => (
                 <button
                   key={region.value}
                   onClick={() => setSelectedRegion(region.value)}
@@ -324,52 +315,76 @@ export default function HomePage() {
                 </button>
               ))}
               <button
-                onClick={() => setShowAllRegions(!showAllRegions)}
-                className="shrink-0 flex items-center gap-0.5 rounded-full px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                onClick={() => setShowMapRegion(!showMapRegion)}
+                className={`shrink-0 flex items-center gap-0.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+                  showMapRegion || !["all", "nationwide", "online"].includes(selectedRegion)
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+                }`}
               >
-                {showAllRegions ? (
-                  <>收起 <ChevronUp className="h-3.5 w-3.5" /></>
+                🗺️ 地圖選區
+                {showMapRegion ? (
+                  <ChevronUp className="h-3.5 w-3.5 ml-0.5" />
                 ) : (
-                  <>更多 <ChevronDown className="h-3.5 w-3.5" /></>
+                  <ChevronDown className="h-3.5 w-3.5 ml-0.5" />
                 )}
               </button>
             </div>
+            {showMapRegion && (
+              <div className="mt-3 max-w-xs">
+                <KoreaMap
+                  selected={selectedRegion}
+                  onSelect={(v) => {
+                    setSelectedRegion(v);
+                    setShowMapRegion(false);
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
         {/* 카테고리 */}
         <div className="container mx-auto px-4 py-5">
-          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-5">
-            {displayCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() =>
-                  setSelectedCategory(
-                    selectedCategory === category.id ? "all" : category.id
-                  )
-                }
-                className="group flex flex-col items-center gap-1.5"
-              >
-                <div
-                  className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl transition-all duration-200 md:h-16 md:w-16 ${
-                    selectedCategory === category.id
-                      ? "bg-primary/10 ring-2 ring-primary scale-105"
-                      : "bg-gray-50 border border-gray-100 group-hover:bg-primary/5 group-hover:border-primary/20 group-hover:scale-105"
-                  }`}
+          <div className="flex overflow-x-auto gap-4 pb-1 scrollbar-hide md:flex-wrap md:justify-center md:gap-5">
+            {displayCategories.map((category, idx) => {
+              const gradients = [
+                "from-rose-400 to-pink-500",
+                "from-orange-400 to-amber-500",
+                "from-yellow-400 to-lime-400",
+                "from-emerald-400 to-teal-500",
+                "from-cyan-400 to-blue-500",
+                "from-blue-400 to-indigo-500",
+                "from-violet-400 to-purple-500",
+                "from-pink-400 to-rose-500",
+                "from-fuchsia-400 to-pink-500",
+              ];
+              const gradient = gradients[idx % gradients.length];
+              const isSelected = selectedCategory === category.id;
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(isSelected ? "all" : category.id)}
+                  className="group flex shrink-0 flex-col items-center gap-2"
                 >
-                  {category.icon || "📦"}
-                </div>
-                <span
-                  className={`text-xs font-medium transition-colors md:text-sm ${
-                    selectedCategory === category.id
-                      ? "text-primary font-semibold"
-                      : "text-gray-600 group-hover:text-primary"
-                  }`}
-                >
-                  {category.name_zh}
-                </span>
-              </button>
-            ))}
+                  <div className={`relative flex h-14 w-14 items-center justify-center rounded-full text-2xl transition-all duration-200 md:h-16 md:w-16 ${
+                    isSelected
+                      ? `bg-gradient-to-br ${gradient} shadow-lg scale-110`
+                      : `bg-gradient-to-br ${gradient} opacity-30 group-hover:opacity-70 group-hover:scale-105`
+                  }`}>
+                    {category.icon || "📦"}
+                    {isSelected && (
+                      <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[8px] font-bold text-primary shadow">✓</span>
+                    )}
+                  </div>
+                  <span className={`text-[11px] font-medium transition-colors md:text-xs ${
+                    isSelected ? "text-primary font-bold" : "text-gray-500 group-hover:text-gray-700"
+                  }`}>
+                    {category.name_zh}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           {categories.length > featuredCategories.length && (
             <div className="mt-4 flex justify-center">
