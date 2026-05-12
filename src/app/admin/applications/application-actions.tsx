@@ -21,6 +21,7 @@ interface ApplicationActionsProps {
   applicationId: string;
   status: ApplicationStatus;
   scheduleProposal: ScheduleProposal | null;
+  isDelivery?: boolean;
   onStatusChange?: () => void;
 }
 
@@ -28,6 +29,7 @@ export function ApplicationActions({
   applicationId,
   status,
   scheduleProposal,
+  isDelivery,
   onStatusChange,
 }: ApplicationActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -168,19 +170,19 @@ export function ApplicationActions({
     );
   }
 
-  // 3단계: reservation_submitted → 예약 확정/거절
+  // 3단계: reservation_submitted → 예약 확정/거절 (배송: 발송 완료 처리)
   if (status === "reservation_submitted") {
     return (
       <div className="space-y-3 rounded-md border bg-green-50 p-4">
         <p className="text-sm font-semibold text-green-800">
           <ClipboardCheck className="mr-1 inline h-4 w-4" />
-          예약 확정
+          {isDelivery ? "발송 처리" : "예약 확정"}
         </p>
         <div className="space-y-2">
           <Label htmlFor="admin_note_reservation">관리자 메모 (선택)</Label>
           <Input
             id="admin_note_reservation"
-            placeholder="예약 확정 안내 또는 거절 사유"
+            placeholder={isDelivery ? "발송 확인 메모" : "예약 확정 안내 또는 거절 사유"}
             value={adminNote}
             onChange={(e) => setAdminNote(e.target.value)}
           />
@@ -188,7 +190,7 @@ export function ApplicationActions({
         <div className="flex gap-2">
           <Button onClick={() => updateStatus("visit_confirmed")} disabled={isLoading} className="gap-2 bg-green-600 hover:bg-green-700">
             {isLoading ? <LoadingSpinner size="sm" /> : <Check className="h-4 w-4" />}
-            예약 확정
+            {isDelivery ? "발송 완료 처리" : "예약 확정"}
           </Button>
           <Button variant="destructive" onClick={() => updateStatus("rejected")} disabled={isLoading} className="gap-2">
             <X className="h-4 w-4" />

@@ -93,6 +93,7 @@ export type Database = {
           drive_url: string | null;
           service_options: string | null;
           service_options_zh_tw: string | null;
+          is_delivery: boolean;
           platforms: string[];
           created_by: string | null;
           created_at: string;
@@ -131,6 +132,7 @@ export type Database = {
           drive_url?: string | null;
           service_options?: string | null;
           service_options_zh_tw?: string | null;
+          is_delivery?: boolean;
           platforms?: string[];
           created_by?: string | null;
           created_at?: string;
@@ -169,6 +171,7 @@ export type Database = {
           drive_url?: string | null;
           service_options?: string | null;
           service_options_zh_tw?: string | null;
+          is_delivery?: boolean;
           platforms?: string[];
           created_by?: string | null;
           created_at?: string;
@@ -292,6 +295,47 @@ export type Database = {
           updated_at?: string;
         };
       };
+      delivery_addresses: {
+        Row: {
+          id: string;
+          application_id: string;
+          recipient_name: string;
+          country: string;
+          city_state: string;
+          zipcode: string;
+          address: string;
+          mobile: string;
+          email: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          recipient_name: string;
+          country: string;
+          city_state: string;
+          zipcode: string;
+          address: string;
+          mobile: string;
+          email: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          application_id?: string;
+          recipient_name?: string;
+          country?: string;
+          city_state?: string;
+          zipcode?: string;
+          address?: string;
+          mobile?: string;
+          email?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       reviews: {
         Row: {
           id: string;
@@ -365,6 +409,7 @@ export type Application = Tables<"applications">;
 export type Review = Tables<"reviews">;
 export type ScheduleProposal = Tables<"schedule_proposals">;
 export type ReservationInfo = Tables<"reservation_info">;
+export type DeliveryAddress = Tables<"delivery_addresses">;
 
 export type Category = {
   id: string;

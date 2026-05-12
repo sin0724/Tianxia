@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, CalendarDays, ClipboardList, FileText, BookOpen } from "lucide-react";
 import { ScheduleForm } from "./schedule-form";
 import { ReservationForm } from "./reservation-form";
+import { DeliveryAddressForm } from "./delivery-address-form";
 import type { ApplicationStatus } from "@/types/database";
 
 interface ApplicationStepActionsProps {
@@ -14,9 +15,11 @@ interface ApplicationStepActionsProps {
   confirmedDate: string | null;
   campaignId: string;
   userName?: string;
+  userEmail?: string;
   userLineId?: string;
   serviceOptions?: string[];
   driveUrl?: string;
+  isDelivery?: boolean;
 }
 
 export function ApplicationStepActions({
@@ -25,9 +28,11 @@ export function ApplicationStepActions({
   confirmedDate,
   campaignId,
   userName,
+  userEmail,
   userLineId,
   serviceOptions,
   driveUrl,
+  isDelivery,
 }: ApplicationStepActionsProps) {
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showReservationForm, setShowReservationForm] = useState(false);
@@ -42,6 +47,34 @@ export function ApplicationStepActions({
   const reload = () => window.location.reload();
 
   if (status === "approved") {
+    if (isDelivery) {
+      return (
+        <div className="space-y-3">
+          <p className="text-sm text-blue-700 font-medium">
+            🎉 恭喜入選！請填寫收件資訊，商品將寄送至您的地址
+          </p>
+          {showScheduleForm ? (
+            <DeliveryAddressForm
+              applicationId={applicationId}
+              onSuccess={reload}
+              defaultName={userName}
+              defaultEmail={userEmail}
+            />
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+              onClick={() => setShowScheduleForm(true)}
+            >
+              <ClipboardList className="h-4 w-4" />
+              填寫收件資訊
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-3">
         <p className="text-sm text-blue-700 font-medium">
@@ -108,11 +141,45 @@ export function ApplicationStepActions({
   }
 
   if (status === "reservation_submitted") {
+    if (isDelivery) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          📦 收件資訊已提交，廠商確認後將寄出商品，請耐心等待
+        </p>
+      );
+    }
     return (
       <p className="text-sm text-muted-foreground">
         ⏳ 預約資訊已送出，請等待廣告主確認
       </p>
     );
+  }
+
+  if (status === "visit_confirmed" || status === "completed") {
+    if (isDelivery) {
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-sm text-green-700">
+            <span className="text-base">📦</span>
+            <span>商品已寄出！收到商品後請發布體驗相關內容，再提交後記</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/campaigns/${campaignId}`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <ExternalLink className="h-4 w-4" />
+                查看活動
+              </Button>
+            </Link>
+            <Link href="/mypage/reviews">
+              <Button size="sm" className="gap-2">
+                <FileText className="h-4 w-4" />
+                提交後記
+              </Button>
+            </Link>
+          </div>
+        </div>
+      );
+    }
   }
 
   if (status === "visit_confirmed" || status === "completed") {

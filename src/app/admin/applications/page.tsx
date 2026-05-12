@@ -25,6 +25,16 @@ interface ReservationInfo {
   special_requests: string | null;
 }
 
+interface DeliveryAddress {
+  recipient_name: string;
+  country: string;
+  city_state: string;
+  zipcode: string;
+  address: string;
+  mobile: string;
+  email: string;
+}
+
 interface Application {
   id: string;
   campaign_id: string;
@@ -49,9 +59,11 @@ interface Application {
     id: string;
     title_ko: string;
     brand_name_ko: string;
+    is_delivery: boolean;
   } | null;
   schedule_proposals: ScheduleProposal | null;
   reservation_info: ReservationInfo | null;
+  delivery_addresses: DeliveryAddress | null;
 }
 
 type StatusFilter = "all" | ApplicationStatus;
@@ -94,9 +106,10 @@ export default function AdminApplicationsPage() {
       .select(`
         *,
         profiles (id, name, email, instagram_handle, region),
-        campaigns (id, title_ko, brand_name_ko),
+        campaigns (id, title_ko, brand_name_ko, is_delivery),
         schedule_proposals (proposed_dates, preferred_time, message, confirmed_date),
-        reservation_info (visitor_name, reservation_datetime, emergency_contact, line_id, special_requests)
+        reservation_info (visitor_name, reservation_datetime, emergency_contact, line_id, special_requests),
+        delivery_addresses (recipient_name, country, city_state, zipcode, address, mobile, email)
       `)
       .order("applied_at", { ascending: false });
 
@@ -105,6 +118,7 @@ export default function AdminApplicationsPage() {
         ...a,
         schedule_proposals: Array.isArray(a.schedule_proposals) ? a.schedule_proposals[0] ?? null : a.schedule_proposals,
         reservation_info: Array.isArray(a.reservation_info) ? a.reservation_info[0] ?? null : a.reservation_info,
+        delivery_addresses: Array.isArray(a.delivery_addresses) ? a.delivery_addresses[0] ?? null : a.delivery_addresses,
       })) as unknown as Application[]);
     }
     setLoading(false);
@@ -292,10 +306,26 @@ export default function AdminApplicationsPage() {
                     </div>
                   )}
 
+                  {/* 배송 주소 표시 */}
+                  {application.delivery_addresses && (
+                    <div className="rounded-md bg-blue-50 p-3 text-sm">
+                      <p className="font-medium text-blue-800">배송 주소</p>
+                      <div className="mt-1 grid grid-cols-2 gap-1 text-blue-700">
+                        <span>수령인: {application.delivery_addresses.recipient_name}</span>
+                        <span>연락처: {application.delivery_addresses.mobile}</span>
+                        <span>국가: {application.delivery_addresses.country}</span>
+                        <span>우편번호: {application.delivery_addresses.zipcode}</span>
+                        <span className="col-span-2">주소: {application.delivery_addresses.city_state} {application.delivery_addresses.address}</span>
+                        <span className="col-span-2">이메일: {application.delivery_addresses.email}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <ApplicationActions
                     applicationId={application.id}
                     status={application.status}
                     scheduleProposal={application.schedule_proposals}
+                    isDelivery={application.campaigns?.is_delivery ?? false}
                     onStatusChange={fetchApplications}
                   />
 

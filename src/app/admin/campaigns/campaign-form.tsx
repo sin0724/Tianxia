@@ -52,6 +52,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
   const [driveUrl, setDriveUrl] = useState<string>(
     (campaign as any)?.drive_url || ""
   );
+  const [isDelivery, setIsDelivery] = useState<boolean>(
+    (campaign as any)?.is_delivery ?? false
+  );
   const [serviceOptions, setServiceOptions] = useState<string>(
     (campaign as any)?.service_options || ""
   );
@@ -339,6 +342,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         thumbnail_url: thumbnailUrl || null,
         map_url: mapUrl || null,
         drive_url: driveUrl || null,
+        is_delivery: isDelivery,
         service_options: serviceOptions.trim() || null,
         recruitment_count: data.recruitment_count || 1,
         bonus_application_count: bonusCount || 0,
@@ -650,6 +654,40 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             <p className="text-xs text-gray-500">
               예약 확정된 체험단에게만 공개됩니다 (촬영 가이드, 숙지 사항 등). 자율촬영 업체는 비워두세요 → 유저에게 「自由拍攝」으로 자동 안내됩니다
             </p>
+          </div>
+
+          {/* 체험 유형 토글 */}
+          <div className="space-y-2">
+            <Label>체험 유형</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsDelivery(false)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                  !isDelivery
+                    ? "bg-primary text-white"
+                    : "border border-gray-200 bg-white text-gray-700 hover:border-primary hover:text-primary"
+                }`}
+              >
+                방문 체험단
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsDelivery(true)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                  isDelivery
+                    ? "bg-primary text-white"
+                    : "border border-gray-200 bg-white text-gray-700 hover:border-primary hover:text-primary"
+                }`}
+              >
+                배송 체험단
+              </button>
+            </div>
+            {isDelivery && (
+              <p className="text-xs text-amber-600">
+                배송 체험단: 입선 후 유저가 수령 주소를 입력하면 관리자가 발송 처리합니다
+              </p>
+            )}
           </div>
 
           {/* 서비스 선택 항목 (선택형 캠페인용) */}

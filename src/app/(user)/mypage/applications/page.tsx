@@ -32,7 +32,7 @@ export default async function MyApplicationsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, line_id")
+    .select("name, email, line_id")
     .eq("id", user.id)
     .single();
 
@@ -44,13 +44,16 @@ export default async function MyApplicationsPage() {
         id, title_zh_tw, title_ko,
         brand_name_zh_tw, brand_name_ko,
         thumbnail_url, experience_date, review_deadline,
-        drive_url, service_options, service_options_zh_tw
+        drive_url, service_options, service_options_zh_tw, is_delivery
       ),
       schedule_proposals (
         proposed_dates, preferred_time, message, confirmed_date
       ),
       reservation_info (
         visitor_name, reservation_datetime, emergency_contact, line_id, selected_service, special_requests
+      ),
+      delivery_addresses (
+        recipient_name, country, city_state, zipcode, address, mobile, email
       )
     `)
     .eq("user_id", user.id)
@@ -92,7 +95,11 @@ export default async function MyApplicationsPage() {
               drive_url: string | null;
               service_options: string | null;
               service_options_zh_tw: string | null;
+              is_delivery: boolean;
             };
+            const deliveryAddress = Array.isArray((application as any).delivery_addresses)
+              ? ((application as any).delivery_addresses[0] as { recipient_name: string; country: string; city_state: string; zipcode: string; address: string; mobile: string; email: string } | undefined)
+              : (application as any).delivery_addresses as { recipient_name: string; country: string; city_state: string; zipcode: string; address: string; mobile: string; email: string } | null;
 
             const scheduleProposal = Array.isArray(application.schedule_proposals)
               ? application.schedule_proposals[0]
@@ -143,7 +150,7 @@ export default async function MyApplicationsPage() {
                   </div>
 
                   {/* 단계별 진행 상황 표시 */}
-                  <StepProgress status={status} />
+                  <StepProgress status={status} isDelivery={campaign.is_delivery} />
 
                   {/* 일정 제안 내용 표시 */}
                   {scheduleProposal && (
@@ -183,6 +190,21 @@ export default async function MyApplicationsPage() {
                     </div>
                   )}
 
+                  {/* 배송 주소 표시 */}
+                  {deliveryAddress && (
+                    <div className="rounded-md bg-blue-50 p-3 text-sm">
+                      <p className="font-medium text-blue-800">收件資訊</p>
+                      <div className="mt-1 grid grid-cols-2 gap-1 text-blue-700">
+                        <span>姓名：{deliveryAddress.recipient_name}</span>
+                        <span>手機：{deliveryAddress.mobile}</span>
+                        <span>國家：{deliveryAddress.country}</span>
+                        <span>郵遞區號：{deliveryAddress.zipcode}</span>
+                        <span className="col-span-2">地址：{deliveryAddress.city_state} {deliveryAddress.address}</span>
+                        <span className="col-span-2">Email：{deliveryAddress.email}</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 단계별 액션 버튼 */}
                   <ApplicationStepActions
                     applicationId={application.id}
@@ -190,9 +212,11 @@ export default async function MyApplicationsPage() {
                     confirmedDate={scheduleProposal?.confirmed_date ?? null}
                     campaignId={campaign.id}
                     userName={profile?.name ?? undefined}
+                    userEmail={(profile as any)?.email ?? undefined}
                     userLineId={profile?.line_id ?? undefined}
                     serviceOptions={serviceOptions}
                     driveUrl={campaign.drive_url ?? undefined}
+                    isDelivery={campaign.is_delivery}
                   />
 
                   {application.admin_note && (
@@ -279,14 +303,22 @@ function FlowGuide() {
   );
 }
 
-function StepProgress({ status }: { status: ApplicationStatus }) {
-  const steps = [
-    { key: "pending",               label: "申請" },
-    { key: "approved",              label: "選中" },
-    { key: "scheduled",             label: "日程確定" },
-    { key: "visit_confirmed",       label: "預約確定" },
-    { key: "completed",             label: "完成" },
-  ];
+function StepProgress({ status, isDelivery }: { status: ApplicationStatus; isDelivery?: boolean }) {
+  const steps = isDelivery
+    ? [
+        { key: "pending",               label: "申請" },
+        { key: "approved",              label: "選中" },
+        { key: "reservation_submitted", label: "等待寄出" },
+        { key: "visit_confirmed",       label: "已寄出" },
+        { key: "completed",             label: "完成" },
+      ]
+    : [
+        { key: "pending",               label: "申請" },
+        { key: "approved",              label: "選中" },
+        { key: "scheduled",             label: "日程確定" },
+        { key: "visit_confirmed",       label: "預約確定" },
+        { key: "completed",             label: "完成" },
+      ];
 
   const ORDER: Record<ApplicationStatus, number> = {
     pending: 0,
