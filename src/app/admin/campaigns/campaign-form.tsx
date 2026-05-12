@@ -648,7 +648,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
               onChange={(e) => setDriveUrl(e.target.value)}
             />
             <p className="text-xs text-gray-500">
-              예약 확정된 체험단에게만 공개됩니다 (촬영 가이드, 숙지 사항 등)
+              예약 확정된 체험단에게만 공개됩니다 (촬영 가이드, 숙지 사항 등). 자율촬영 업체는 비워두세요 → 유저에게 「自由拍攝」으로 자동 안내됩니다
             </p>
           </div>
 

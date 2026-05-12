@@ -124,6 +124,12 @@ export function ApplicationStepActions({
 
     return (
       <div className="space-y-3">
+        {!driveUrl && (
+          <div className="flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm text-sky-700">
+            <span className="text-base">📷</span>
+            <span>此活動為自由拍攝，無需拍攝指南，可直接提交後記</span>
+          </div>
+        )}
         {driveUrl && (
           <button
             type="button"

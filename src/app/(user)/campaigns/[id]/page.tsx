@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, MapPin, Users, Clock, Gift, CheckCircle, Map } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, Gift, CheckCircle, Map, Camera } from "lucide-react";
 import { formatDate, getDaysRemaining } from "@/lib/utils";
 import { getRegionLabel } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
@@ -172,6 +172,17 @@ export default async function CampaignDetailPage({
                 <div>
                   <p className="text-sm text-muted-foreground">後記截止</p>
                   <p className="font-medium">{formatDate(campaign.review_deadline)}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className={(campaign as any).drive_url ? "" : "border-sky-200 bg-sky-50"}>
+              <CardContent className="flex items-center gap-3 p-4">
+                <Camera className={(campaign as any).drive_url ? "h-5 w-5 text-primary" : "h-5 w-5 text-sky-500"} />
+                <div>
+                  <p className="text-sm text-muted-foreground">拍攝方式</p>
+                  <p className={(campaign as any).drive_url ? "font-medium" : "font-medium text-sky-700"}>
+                    {(campaign as any).drive_url ? "提供拍攝指南" : "✓ 自由拍攝"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
