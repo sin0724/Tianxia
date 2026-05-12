@@ -90,7 +90,9 @@ export default async function CampaignDetailPage({
   const brandName = campaign.brand_name_zh_tw || campaign.brand_name_ko;
   const summary = campaign.summary_zh_tw || campaign.summary_ko;
   const description = campaign.description_zh_tw || campaign.description_ko;
-  const benefits = campaign.benefits_zh_tw || campaign.benefits_ko;
+  const serviceOptions = (campaign as any).service_options
+    ? ((campaign as any).service_options as string).split("\n").map((s: string) => s.trim()).filter(Boolean)
+    : null;
   const requirements = campaign.requirements_zh_tw || campaign.requirements_ko;
   const precautions = campaign.precautions_zh_tw || campaign.precautions_ko;
 
@@ -206,20 +208,27 @@ export default async function CampaignDetailPage({
             </CardContent>
           </Card>
 
-          {/* Benefits */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="h-5 w-5 text-primary" />
-                <span>提供內容</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="prose prose-sm max-w-none">
-                <p className="whitespace-pre-wrap">{benefits}</p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Benefits / Service Options */}
+          {serviceOptions && serviceOptions.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-primary" />
+                  <span>提供內容</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {serviceOptions.map((opt, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      {opt}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Requirements */}
           <Card className="mb-6">
