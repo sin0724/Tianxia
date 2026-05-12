@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut, Home } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -44,7 +44,7 @@ export function Header({ user }: HeaderProps) {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center">
           <Image
-            src="/logo.png"
+            src="/티엔샤로고.png"
             alt="Tianxia"
             width={140}
             height={40}
@@ -54,16 +54,28 @@ export function Header({ user }: HeaderProps) {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-2 md:flex">
+          <Link
+            href="/"
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all",
+              pathname === "/"
+                ? "bg-primary/10 text-primary"
+                : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+            )}
+          >
+            <Home className="h-3.5 w-3.5" />
+            首頁
+          </Link>
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
+                "rounded-full px-3 py-1.5 text-sm font-medium transition-all",
                 pathname === item.href
-                  ? "text-primary"
-                  : "text-gray-600"
+                  ? "bg-primary/10 text-primary"
+                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
               )}
             >
               {item.label}
@@ -137,6 +149,19 @@ export function Header({ user }: HeaderProps) {
       {isMenuOpen && (
         <div className="border-t border-gray-100 bg-white md:hidden">
           <nav className="container mx-auto flex flex-col gap-2 px-4 py-4">
+            <Link
+              href="/"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                pathname === "/"
+                  ? "bg-primary/10 text-primary"
+                  : "text-gray-600 hover:bg-gray-50"
+              )}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Home className="h-4 w-4" />
+              首頁
+            </Link>
             {navItems.map((item) => (
               <Link
                 key={item.href}
