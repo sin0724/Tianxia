@@ -50,6 +50,12 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
   const [mapUrl, setMapUrl] = useState<string>(
     (campaign as any)?.map_url || ""
   );
+  const [driveUrl, setDriveUrl] = useState<string>(
+    (campaign as any)?.drive_url || ""
+  );
+  const [serviceOptions, setServiceOptions] = useState<string>(
+    (campaign as any)?.service_options || ""
+  );
   const [bonusCount, setBonusCount] = useState<number>(
     campaign?.bonus_application_count ?? 0
   );
@@ -335,6 +341,8 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         platforms: selectedPlatforms,
         thumbnail_url: thumbnailUrl || null,
         map_url: mapUrl || null,
+        drive_url: driveUrl || null,
+        service_options: serviceOptions.trim() || null,
         recruitment_count: data.recruitment_count || 1,
         bonus_application_count: bonusCount || 0,
         application_deadline: data.application_deadline
@@ -619,6 +627,35 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             />
             <p className="text-xs text-gray-500">
               구글 지도에서 위치를 검색 후 "공유" → "링크 복사"하여 붙여넣기
+            </p>
+          </div>
+
+          {/* 구글 드라이브 링크 (예약 확정자 전용) */}
+          <div className="space-y-2">
+            <Label htmlFor="drive_url">촬영 가이드 드라이브 링크 <span className="text-xs font-normal text-gray-400">(선택)</span></Label>
+            <Input
+              id="drive_url"
+              placeholder="https://drive.google.com/..."
+              value={driveUrl}
+              onChange={(e) => setDriveUrl(e.target.value)}
+            />
+            <p className="text-xs text-gray-500">
+              예약 확정된 체험단에게만 공개됩니다 (촬영 가이드, 숙지 사항 등)
+            </p>
+          </div>
+
+          {/* 서비스 선택 항목 (선택형 캠페인용) */}
+          <div className="space-y-2">
+            <Label htmlFor="service_options">선택 가능한 서비스 항목 <span className="text-xs font-normal text-gray-400">(선택, 병원/시술 등)</span></Label>
+            <Textarea
+              id="service_options"
+              placeholder={"리프팅 시술\n보톡스\n피부 관리\n레이저 토닝"}
+              rows={4}
+              value={serviceOptions}
+              onChange={(e) => setServiceOptions(e.target.value)}
+            />
+            <p className="text-xs text-gray-500">
+              줄바꿈으로 구분. 입력 시 예약 폼에 선택 드롭다운이 표시됩니다
             </p>
           </div>
 

@@ -90,6 +90,8 @@ export type Database = {
           requirements_zh_tw: string | null;
           precautions_zh_tw: string | null;
           map_url: string | null;
+          drive_url: string | null;
+          service_options: string | null;
           platforms: string[];
           created_by: string | null;
           created_at: string;
@@ -125,6 +127,8 @@ export type Database = {
           requirements_zh_tw?: string | null;
           precautions_zh_tw?: string | null;
           map_url?: string | null;
+          drive_url?: string | null;
+          service_options?: string | null;
           platforms?: string[];
           created_by?: string | null;
           created_at?: string;
@@ -160,6 +164,8 @@ export type Database = {
           requirements_zh_tw?: string | null;
           precautions_zh_tw?: string | null;
           map_url?: string | null;
+          drive_url?: string | null;
+          service_options?: string | null;
           platforms?: string[];
           created_by?: string | null;
           created_at?: string;
@@ -253,6 +259,7 @@ export type Database = {
           reservation_datetime: string;
           emergency_contact: string;
           line_id: string | null;
+          selected_service: string | null;
           special_requests: string | null;
           created_at: string;
           updated_at: string;
@@ -264,6 +271,7 @@ export type Database = {
           reservation_datetime: string;
           emergency_contact: string;
           line_id?: string | null;
+          selected_service?: string | null;
           special_requests?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -275,6 +283,7 @@ export type Database = {
           reservation_datetime?: string;
           emergency_contact?: string;
           line_id?: string | null;
+          selected_service?: string | null;
           special_requests?: string | null;
           created_at?: string;
           updated_at?: string;

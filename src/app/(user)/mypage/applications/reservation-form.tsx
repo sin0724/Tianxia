@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { reservationInfoSchema, type ReservationInfoInput } from "@/lib/validations/application";
@@ -9,10 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
-import { ClipboardList, User, Phone, MessageSquare } from "lucide-react";
+import { ClipboardList, User, Phone, MessageSquare, Calendar, Star } from "lucide-react";
 
 interface ReservationFormProps {
   applicationId: string;
@@ -20,26 +19,30 @@ interface ReservationFormProps {
   onSuccess: () => void;
   userName?: string;
   userLineId?: string;
+  serviceOptions?: string[];
 }
 
-export function ReservationForm({ applicationId, confirmedDate, onSuccess, userName, userLineId }: ReservationFormProps) {
+export function ReservationForm({
+  applicationId,
+  confirmedDate,
+  onSuccess,
+  userName,
+  userLineId,
+  serviceOptions,
+}: ReservationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<ReservationInfoInput>({
+  const { register, handleSubmit, formState: { errors } } = useForm<ReservationInfoInput>({
     resolver: zodResolver(reservationInfoSchema),
     defaultValues: {
       application_id: applicationId,
       visitor_name: userName || "",
       line_id: userLineId || "",
+      reservation_datetime: confirmedDate,
     },
   });
 
   const onSubmit = async (data: ReservationInfoInput) => {
-    if (!data.reservation_datetime.includes(" ")) {
-      toast({ title: "請選擇到訪時間", variant: "destructive" });
-      return;
-    }
-
     setIsLoading(true);
     const supabase = createClient();
 
@@ -48,9 +51,10 @@ export function ReservationForm({ applicationId, confirmedDate, onSuccess, userN
       .insert({
         application_id: applicationId,
         visitor_name: data.visitor_name,
-        reservation_datetime: data.reservation_datetime,
+        reservation_datetime: confirmedDate,
         emergency_contact: data.emergency_contact,
         line_id: data.line_id || null,
+        selected_service: data.selected_service || null,
         special_requests: data.special_requests || null,
       });
 
@@ -83,6 +87,15 @@ export function ReservationForm({ applicationId, confirmedDate, onSuccess, userN
         <p className="text-sm font-semibold text-green-800">填寫預約資訊</p>
       </div>
 
+      {/* 관리자 확정 날짜+시간 표시 */}
+      <div className="flex items-center gap-2 rounded-lg bg-green-100 px-3 py-2.5">
+        <Calendar className="h-4 w-4 shrink-0 text-green-700" />
+        <div>
+          <p className="text-xs font-medium text-green-700">管理員確認的到訪時間</p>
+          <p className="text-sm font-bold text-green-900">{confirmedDate}</p>
+        </div>
+      </div>
+
       {/* 1. 姓名（中文） */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-sm font-medium">
@@ -99,32 +112,7 @@ export function ReservationForm({ applicationId, confirmedDate, onSuccess, userN
         )}
       </div>
 
-      {/* 2. 預約日期與時間 */}
-      <div className="space-y-1.5">
-        <Label className="text-sm font-medium">
-          預約日期與時間<span className="text-red-500">*</span>
-        </Label>
-        <p className="text-xs text-gray-500">
-          管理員確認日期：<span className="font-medium text-green-700">{confirmedDate}</span>
-        </p>
-        <Controller
-          name="reservation_datetime"
-          control={control}
-          render={({ field }) => (
-            <DateTimePicker
-              value={field.value}
-              onChange={field.onChange}
-              preselectedDate={confirmedDate}
-              minDate={new Date().toISOString().split("T")[0]}
-            />
-          )}
-        />
-        {errors.reservation_datetime && (
-          <p className="text-xs text-red-500">{errors.reservation_datetime.message}</p>
-        )}
-      </div>
-
-      {/* 3. 緊急聯絡方式 */}
+      {/* 2. 緊急聯絡方式 */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-sm font-medium">
           <Phone className="h-3.5 w-3.5 text-gray-500" />
@@ -140,7 +128,7 @@ export function ReservationForm({ applicationId, confirmedDate, onSuccess, userN
         )}
       </div>
 
-      {/* 4. LINE ID */}
+      {/* 3. LINE ID */}
       <div className="space-y-1.5">
         <Label className="text-sm font-medium">LINE ID</Label>
         <Input
@@ -149,6 +137,27 @@ export function ReservationForm({ applicationId, confirmedDate, onSuccess, userN
           className="bg-white"
         />
       </div>
+
+      {/* 4. 서비스 선택 (옵션이 있는 캠페인만 표시) */}
+      {serviceOptions && serviceOptions.length > 0 && (
+        <div className="space-y-1.5">
+          <Label className="flex items-center gap-1.5 text-sm font-medium">
+            <Star className="h-3.5 w-3.5 text-amber-500" />
+            選擇服務項目<span className="text-red-500">*</span>
+          </Label>
+          <select
+            {...register("selected_service")}
+            className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <option value="">請選擇服務項目</option>
+            {serviceOptions.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* 5. 其他備註 */}
       <div className="space-y-1.5">

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, FolderOpen } from "lucide-react";
 import { ApplicationStepActions } from "./application-step-actions";
 import type { ApplicationStatus } from "@/types/database";
 
@@ -43,13 +43,14 @@ export default async function MyApplicationsPage() {
       campaigns (
         id, title_zh_tw, title_ko,
         brand_name_zh_tw, brand_name_ko,
-        thumbnail_url, experience_date, review_deadline
+        thumbnail_url, experience_date, review_deadline,
+        drive_url, service_options
       ),
       schedule_proposals (
         proposed_dates, preferred_time, message, confirmed_date
       ),
       reservation_info (
-        visitor_name, reservation_datetime, emergency_contact, line_id, special_requests
+        visitor_name, reservation_datetime, emergency_contact, line_id, selected_service, special_requests
       )
     `)
     .eq("user_id", user.id)
@@ -68,6 +69,9 @@ export default async function MyApplicationsPage() {
         <p className="text-muted-foreground">查看申請狀態並完成各階段流程</p>
       </div>
 
+      {/* 진행 플로우 가이드 */}
+      <FlowGuide />
+
       {applications && applications.length > 0 ? (
         <div className="space-y-4">
           {applications.map((application) => {
@@ -80,6 +84,8 @@ export default async function MyApplicationsPage() {
               thumbnail_url: string | null;
               experience_date: string;
               review_deadline: string;
+              drive_url: string | null;
+              service_options: string | null;
             };
 
             const scheduleProposal = Array.isArray(application.schedule_proposals)
@@ -87,8 +93,12 @@ export default async function MyApplicationsPage() {
               : application.schedule_proposals;
 
             const reservationInfo = Array.isArray(application.reservation_info)
-              ? (application.reservation_info[0] as { visitor_name: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; special_requests: string | null } | undefined)
-              : application.reservation_info as { visitor_name: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; special_requests: string | null } | null;
+              ? (application.reservation_info[0] as { visitor_name: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; selected_service: string | null; special_requests: string | null } | undefined)
+              : application.reservation_info as { visitor_name: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; selected_service: string | null; special_requests: string | null } | null;
+
+            const serviceOptions = campaign.service_options
+              ? campaign.service_options.split("\n").map((s) => s.trim()).filter(Boolean)
+              : undefined;
 
             const status = application.status as ApplicationStatus;
             const config = STATUS_CONFIG[status] ?? { label: status, variant: "secondary" as const };
@@ -146,11 +156,28 @@ export default async function MyApplicationsPage() {
                         <span>日期時間：{reservationInfo.reservation_datetime}</span>
                         <span>緊急聯絡：{reservationInfo.emergency_contact}</span>
                         {reservationInfo.line_id && <span>LINE：{reservationInfo.line_id}</span>}
+                        {reservationInfo.selected_service && (
+                          <span className="col-span-2">選擇項目：{reservationInfo.selected_service}</span>
+                        )}
                       </div>
                       {reservationInfo.special_requests && (
                         <p className="mt-1 text-green-600">備註：{reservationInfo.special_requests}</p>
                       )}
                     </div>
+                  )}
+
+                  {/* 구글 드라이브 링크 (예약 확정 이후에만 표시) */}
+                  {(status === "visit_confirmed" || status === "completed") && campaign.drive_url && (
+                    <a
+                      href={campaign.drive_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
+                    >
+                      <FolderOpen className="h-4 w-4 shrink-0" />
+                      <span>查看拍攝指南 / 注意事項（Google Drive）</span>
+                      <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
+                    </a>
                   )}
 
                   {/* 단계별 액션 버튼 */}
@@ -161,6 +188,7 @@ export default async function MyApplicationsPage() {
                     campaignId={campaign.id}
                     userName={profile?.name ?? undefined}
                     userLineId={profile?.line_id ?? undefined}
+                    serviceOptions={serviceOptions}
                   />
 
                   {application.admin_note && (
@@ -185,6 +213,65 @@ export default async function MyApplicationsPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+function FlowGuide() {
+  const steps = [
+    {
+      num: "01",
+      title: "申請活動",
+      desc: "瀏覽活動後填寫Instagram等社群帳號送出申請，等待廣告主審核。",
+      color: "bg-blue-50 border-blue-100 text-blue-700",
+    },
+    {
+      num: "02",
+      title: "獲選通知",
+      desc: "入選後狀態變為「已選中」。請在我的申請頁面提案您希望到訪的日期（最多3個）。",
+      color: "bg-purple-50 border-purple-100 text-purple-700",
+    },
+    {
+      num: "03",
+      title: "日程確定",
+      desc: "管理員確認後會直接告知精確的到訪日期與時間。請填寫預約資訊（姓名、緊急聯絡）送出確認。",
+      color: "bg-green-50 border-green-100 text-green-700",
+    },
+    {
+      num: "04",
+      title: "預約確定 & 拍攝指南",
+      desc: "預約確定後可下載拍攝指南（Google Drive），熟悉拍攝要求後前往體驗。",
+      color: "bg-amber-50 border-amber-100 text-amber-700",
+    },
+    {
+      num: "05",
+      title: "提交後記",
+      desc: "體驗完成後在社群媒體發布後記，至「後記管理」頁面貼上連結提交即完成。",
+      color: "bg-rose-50 border-rose-100 text-rose-700",
+    },
+  ];
+
+  return (
+    <details className="mb-2 rounded-xl border border-gray-100 bg-white shadow-sm">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-gray-700 hover:text-primary">
+        📋 如何進行？查看完整流程說明
+      </summary>
+      <div className="border-t border-gray-100 px-4 py-4">
+        <div className="space-y-3">
+          {steps.map((step) => (
+            <div key={step.num} className={`flex items-start gap-3 rounded-lg border p-3 ${step.color}`}>
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold shadow-sm">
+                {step.num}
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{step.title}</p>
+                <p className="mt-0.5 text-xs opacity-80">{step.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-gray-400">如有疑問請透過LINE聯繫管理員</p>
+      </div>
+    </details>
   );
 }
 

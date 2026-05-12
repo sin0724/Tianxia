@@ -15,6 +15,7 @@ interface ApplicationStepActionsProps {
   campaignId: string;
   userName?: string;
   userLineId?: string;
+  serviceOptions?: string[];
 }
 
 export function ApplicationStepActions({
@@ -24,6 +25,7 @@ export function ApplicationStepActions({
   campaignId,
   userName,
   userLineId,
+  serviceOptions,
 }: ApplicationStepActionsProps) {
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showReservationForm, setShowReservationForm] = useState(false);
@@ -64,9 +66,14 @@ export function ApplicationStepActions({
   if (status === "scheduled" && confirmedDate) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-green-700 font-medium">
-          📅 日程已確定！請填寫預約資訊
-        </p>
+        <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
+          <span className="text-base">📅</span>
+          <div>
+            <p className="text-sm font-semibold text-green-800">日程已確定</p>
+            <p className="text-sm font-bold text-green-700">{confirmedDate}</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500">請在下方填寫預約資訊以確認到訪</p>
         {showReservationForm ? (
           <ReservationForm
             applicationId={applicationId}
@@ -74,6 +81,7 @@ export function ApplicationStepActions({
             onSuccess={reload}
             userName={userName}
             userLineId={userLineId}
+            serviceOptions={serviceOptions}
           />
         ) : (
           <Button

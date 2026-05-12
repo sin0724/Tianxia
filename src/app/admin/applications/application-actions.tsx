@@ -78,10 +78,12 @@ export function ApplicationActions({
 
   const confirmSchedule = async () => {
     if (!selectedDate) {
-      toast({ title: "날짜를 선택해주세요", variant: "destructive" });
+      toast({ title: "날짜와 시간을 입력해주세요", variant: "destructive" });
       return;
     }
-    await updateStatus("scheduled", { confirmed_date: selectedDate });
+    // datetime-local gives "YYYY-MM-DDTHH:MM", store as "YYYY-MM-DD HH:MM"
+    const formatted = selectedDate.replace("T", " ");
+    await updateStatus("scheduled", { confirmed_date: formatted });
   };
 
   // 1단계: pending → 승인/반려
@@ -111,32 +113,37 @@ export function ApplicationActions({
     );
   }
 
-  // 2단계: schedule_proposed → 날짜 선택 확정
+  // 2단계: schedule_proposed → 관리자가 정확한 날짜+시간 직접 입력
   if (status === "schedule_proposed" && scheduleProposal) {
     return (
       <div className="space-y-3 rounded-md border bg-blue-50 p-4">
         <p className="text-sm font-semibold text-blue-800">
           <Calendar className="mr-1 inline h-4 w-4" />
-          일정 확정
+          일정 확정 (날짜·시간 직접 입력)
         </p>
-        <div className="space-y-2">
-          <Label className="text-sm">제안된 날짜 중 선택</Label>
-          <div className="flex flex-wrap gap-2">
+        {/* 유저가 제안한 날짜 참고 표시 */}
+        <div className="rounded bg-blue-100 px-3 py-2">
+          <p className="mb-1 text-xs font-medium text-blue-700">유저 제안 날짜</p>
+          <div className="flex flex-wrap gap-1.5">
             {scheduleProposal.proposed_dates?.map((date, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setSelectedDate(date)}
-                className={`rounded-full px-3 py-1.5 text-sm font-medium border transition-colors ${
-                  selectedDate === date
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-blue-700 border-blue-300 hover:bg-blue-50"
-                }`}
-              >
+              <span key={i} className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700">
                 {date}
-              </button>
+              </span>
             ))}
           </div>
+          {scheduleProposal.preferred_time && (
+            <p className="mt-1 text-xs text-blue-600">선호시간: {scheduleProposal.preferred_time}</p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">확정 날짜 및 시간 입력 *</Label>
+          <Input
+            type="datetime-local"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-white"
+          />
+          <p className="text-xs text-gray-500">입력한 날짜·시간이 유저에게 그대로 고지됩니다</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="admin_note_schedule">관리자 메모 (선택)</Label>
@@ -150,7 +157,7 @@ export function ApplicationActions({
         <div className="flex gap-2">
           <Button onClick={confirmSchedule} disabled={isLoading || !selectedDate} className="gap-2">
             {isLoading ? <LoadingSpinner size="sm" /> : <Calendar className="h-4 w-4" />}
-            일정 확정
+            일정 확정 및 고지
           </Button>
           <Button variant="destructive" onClick={() => updateStatus("rejected")} disabled={isLoading} className="gap-2">
             <X className="h-4 w-4" />
