@@ -231,57 +231,100 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
       const summaryText = guideText.split("\n")[0]?.slice(0, 100) || "";
       const descriptionText = guideText;
 
-      let translations = {};
+      let translations: Record<string, string | null | undefined> = {};
 
       if (!skipTranslation) {
-        try {
-          const translateResponse = await fetch("/api/translate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title_ko: data.title_ko || "",
-              brand_name_ko: data.brand_name_ko || "",
-              summary_ko: summaryText,
-              description_ko: descriptionText,
-              benefits_ko: data.benefits_ko || "",
-              requirements_ko: data.requirements_ko || "",
-              precautions_ko: data.precautions_ko || "",
-            }),
-          });
+        // Determine which content fields actually changed
+        type TranslatePayload = {
+          title_ko?: string;
+          brand_name_ko?: string;
+          summary_ko?: string;
+          description_ko?: string;
+          benefits_ko?: string;
+          requirements_ko?: string;
+          precautions_ko?: string;
+        };
 
-          if (!translateResponse.ok) {
-            const errorBody = await translateResponse.json().catch(() => ({}));
-            const errorMsg = errorBody.error || `번역 서버 오류 (HTTP ${translateResponse.status})`;
-            setTranslationError(errorMsg);
-            toast({
-              title: "번역 실패",
-              description: `${errorMsg}\n\n아래 "번역 없이 저장" 버튼으로 한국어만 저장할 수 있습니다.`,
-              variant: "destructive",
-            });
-            return;
-          }
+        let payload: TranslatePayload;
 
-          const translationResult = await translateResponse.json();
-          if (translationResult.error) {
-            setTranslationError(translationResult.error);
-            toast({
-              title: "번역 실패",
-              description: `${translationResult.error}\n\n아래 "번역 없이 저장" 버튼으로 한국어만 저장할 수 있습니다.`,
-              variant: "destructive",
-            });
-            return;
+        if (!isEditing) {
+          // New campaign: translate all fields
+          payload = {
+            title_ko: data.title_ko || "",
+            brand_name_ko: data.brand_name_ko || "",
+            summary_ko: summaryText,
+            description_ko: descriptionText,
+            benefits_ko: data.benefits_ko || "",
+            requirements_ko: data.requirements_ko || "",
+            precautions_ko: data.precautions_ko || "",
+          };
+        } else {
+          // Editing: only translate fields that actually changed
+          const c = campaign!;
+          const origGuide = c.summary_ko
+            ? `${c.summary_ko}${c.description_ko ? "\n\n" + c.description_ko : ""}`
+            : c.description_ko || "";
+
+          payload = {};
+          if (data.title_ko !== c.title_ko)
+            payload.title_ko = data.title_ko || "";
+          if ((data.brand_name_ko || "") !== (c.brand_name_ko || ""))
+            payload.brand_name_ko = data.brand_name_ko || "";
+          if (guideText !== origGuide) {
+            payload.summary_ko = summaryText;
+            payload.description_ko = descriptionText;
           }
-          translations = translationResult;
-        } catch (fetchError) {
-          const msg = fetchError instanceof Error ? fetchError.message : "네트워크 오류";
-          setTranslationError(`번역 요청 실패: ${msg}`);
-          toast({
-            title: "번역 요청 실패",
-            description: `${msg}\n\n인터넷 연결을 확인하거나 "번역 없이 저장" 버튼을 사용해주세요.`,
-            variant: "destructive",
-          });
-          return;
+          if ((data.benefits_ko || "") !== (c.benefits_ko || ""))
+            payload.benefits_ko = data.benefits_ko || "";
+          if ((data.requirements_ko || "") !== (c.requirements_ko || ""))
+            payload.requirements_ko = data.requirements_ko || "";
+          if ((data.precautions_ko || "") !== (c.precautions_ko || ""))
+            payload.precautions_ko = data.precautions_ko || "";
         }
+
+        if (Object.keys(payload).length > 0) {
+          try {
+            const translateResponse = await fetch("/api/translate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            if (!translateResponse.ok) {
+              const errorBody = await translateResponse.json().catch(() => ({}));
+              const errorMsg = errorBody.error || `번역 서버 오류 (HTTP ${translateResponse.status})`;
+              setTranslationError(errorMsg);
+              toast({
+                title: "번역 실패",
+                description: `${errorMsg}\n\n아래 "번역 없이 저장" 버튼으로 한국어만 저장할 수 있습니다.`,
+                variant: "destructive",
+              });
+              return;
+            }
+
+            const translationResult = await translateResponse.json();
+            if (translationResult.error) {
+              setTranslationError(translationResult.error);
+              toast({
+                title: "번역 실패",
+                description: `${translationResult.error}\n\n아래 "번역 없이 저장" 버튼으로 한국어만 저장할 수 있습니다.`,
+                variant: "destructive",
+              });
+              return;
+            }
+            translations = translationResult;
+          } catch (fetchError) {
+            const msg = fetchError instanceof Error ? fetchError.message : "네트워크 오류";
+            setTranslationError(`번역 요청 실패: ${msg}`);
+            toast({
+              title: "번역 요청 실패",
+              description: `${msg}\n\n인터넷 연결을 확인하거나 "번역 없이 저장" 버튼을 사용해주세요.`,
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+        // else: no content changed → translations stays {}, DB keeps existing zh_tw values
       }
 
       const supabase = createClient();

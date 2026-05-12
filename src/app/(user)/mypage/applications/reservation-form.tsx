@@ -18,15 +18,19 @@ interface ReservationFormProps {
   applicationId: string;
   confirmedDate: string;
   onSuccess: () => void;
+  userName?: string;
+  userLineId?: string;
 }
 
-export function ReservationForm({ applicationId, confirmedDate, onSuccess }: ReservationFormProps) {
+export function ReservationForm({ applicationId, confirmedDate, onSuccess, userName, userLineId }: ReservationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<ReservationInfoInput>({
     resolver: zodResolver(reservationInfoSchema),
     defaultValues: {
       application_id: applicationId,
+      visitor_name: userName || "",
+      line_id: userLineId || "",
     },
   });
 

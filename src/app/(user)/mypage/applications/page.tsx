@@ -30,6 +30,12 @@ export default async function MyApplicationsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?redirect=/mypage/applications");
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name, line_id")
+    .eq("id", user.id)
+    .single();
+
   const { data: applications } = await supabase
     .from("applications")
     .select(`
@@ -153,6 +159,8 @@ export default async function MyApplicationsPage() {
                     status={status}
                     confirmedDate={scheduleProposal?.confirmed_date ?? null}
                     campaignId={campaign.id}
+                    userName={profile?.name ?? undefined}
+                    userLineId={profile?.line_id ?? undefined}
                   />
 
                   {application.admin_note && (

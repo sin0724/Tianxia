@@ -93,6 +93,28 @@ export function ApplicationForm({ campaignId, userProfile }: ApplicationFormProp
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <input type="hidden" {...register("campaign_id")} />
 
+      {/* 저장된 신청자 정보 */}
+      {userProfile && (userProfile.name || userProfile.line_id) && (
+        <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm">
+          <p className="mb-2 text-xs font-semibold text-gray-500">申請者資訊（已儲存）</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {userProfile.name && (
+              <span className="text-gray-700">
+                <span className="text-gray-400">姓名：</span>{userProfile.name}
+              </span>
+            )}
+            {userProfile.line_id && (
+              <span className="text-gray-700">
+                <span className="text-gray-400">LINE：</span>{userProfile.line_id}
+              </span>
+            )}
+          </div>
+          <a href="/mypage" className="mt-1.5 block text-[11px] text-primary hover:underline">
+            修改資料 →
+          </a>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="applied_instagram_url">Instagram 網址 *</Label>
         <Input

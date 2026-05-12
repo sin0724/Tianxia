@@ -7,7 +7,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import { CampaignCard } from "@/components/user/campaign-card";
 import { ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { KoreaMap } from "@/components/ui/korea-map";
+import { KOREA_REGIONS } from "@/constants/regions";
 import type { Category } from "@/types/database";
 
 const CAMPAIGN_TYPES = [
@@ -16,11 +16,7 @@ const CAMPAIGN_TYPES = [
   { value: "delivery", label_zh: "配送型", icon: "📦" },
 ] as const;
 
-const SPECIAL_REGIONS = [
-  { value: "all", label_zh: "全部地區" },
-  { value: "nationwide", label_zh: "全國" },
-  { value: "online", label_zh: "線上" },
-] as const;
+const REGION_ALL = { value: "all", label_zh: "全部" } as const;
 
 interface Banner {
   id: string;
@@ -56,7 +52,6 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(false);
-  const [showMapRegion, setShowMapRegion] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -299,9 +294,19 @@ export default function HomePage() {
 
         {/* 지역 필터 */}
         <div className="border-b border-gray-100">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex flex-wrap items-center gap-1">
-              {SPECIAL_REGIONS.map((region) => (
+          <div className="container mx-auto px-4">
+            <div className="flex items-center gap-1.5 overflow-x-auto py-3 scrollbar-hide">
+              <button
+                onClick={() => setSelectedRegion(REGION_ALL.value)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+                  selectedRegion === REGION_ALL.value
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                }`}
+              >
+                {REGION_ALL.label_zh}
+              </button>
+              {KOREA_REGIONS.map((region) => (
                 <button
                   key={region.value}
                   onClick={() => setSelectedRegion(region.value)}
@@ -314,33 +319,7 @@ export default function HomePage() {
                   {region.label_zh}
                 </button>
               ))}
-              <button
-                onClick={() => setShowMapRegion(!showMapRegion)}
-                className={`shrink-0 flex items-center gap-0.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
-                  showMapRegion || !["all", "nationwide", "online"].includes(selectedRegion)
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-600"
-                }`}
-              >
-                🗺️ 地圖選區
-                {showMapRegion ? (
-                  <ChevronUp className="h-3.5 w-3.5 ml-0.5" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5 ml-0.5" />
-                )}
-              </button>
             </div>
-            {showMapRegion && (
-              <div className="mt-3 max-w-xs">
-                <KoreaMap
-                  selected={selectedRegion}
-                  onSelect={(v) => {
-                    setSelectedRegion(v);
-                    setShowMapRegion(false);
-                  }}
-                />
-              </div>
-            )}
           </div>
         </div>
 

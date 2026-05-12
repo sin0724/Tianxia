@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/shared/header";
 import { Footer } from "@/components/shared/footer";
+import { OnboardingModal } from "@/components/user/onboarding-modal";
 
 export default async function UserLayout({
   children,
@@ -19,6 +20,7 @@ export default async function UserLayout({
       />
       <main className="flex-1">{children}</main>
       <Footer />
+      {user && <OnboardingModal />}
     </div>
   );
 }

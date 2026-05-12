@@ -13,6 +13,8 @@ interface ApplicationStepActionsProps {
   status: ApplicationStatus;
   confirmedDate: string | null;
   campaignId: string;
+  userName?: string;
+  userLineId?: string;
 }
 
 export function ApplicationStepActions({
@@ -20,6 +22,8 @@ export function ApplicationStepActions({
   status,
   confirmedDate,
   campaignId,
+  userName,
+  userLineId,
 }: ApplicationStepActionsProps) {
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showReservationForm, setShowReservationForm] = useState(false);
@@ -68,6 +72,8 @@ export function ApplicationStepActions({
             applicationId={applicationId}
             confirmedDate={confirmedDate}
             onSuccess={reload}
+            userName={userName}
+            userLineId={userLineId}
           />
         ) : (
           <Button
