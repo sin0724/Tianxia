@@ -246,7 +246,6 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           brand_name_ko?: string;
           summary_ko?: string;
           description_ko?: string;
-          requirements_ko?: string;
           precautions_ko?: string;
         };
 
@@ -259,8 +258,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             brand_name_ko: data.brand_name_ko || "",
             summary_ko: summaryText,
             description_ko: descriptionText,
-            requirements_ko: data.requirements_ko || "",
-            precautions_ko: data.precautions_ko || "",
+            ...(data.precautions_ko ? { precautions_ko: data.precautions_ko } : {}),
           };
         } else {
           // Editing: only translate fields that actually changed
@@ -278,8 +276,6 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             payload.summary_ko = summaryText;
             payload.description_ko = descriptionText;
           }
-          if ((data.requirements_ko || "") !== (c.requirements_ko || ""))
-            payload.requirements_ko = data.requirements_ko || "";
           if ((data.precautions_ko || "") !== (c.precautions_ko || ""))
             payload.precautions_ko = data.precautions_ko || "";
         }
@@ -372,7 +368,10 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         summary_ko: summaryText || "",
         description_ko: descriptionText || "",
         benefits_ko: "",
-        requirements_ko: data.requirements_ko || "",
+        benefits_zh_tw: "",
+        requirements_ko: "인스타그램, 쓰레드 계정 소지자",
+        // requirements_zh_tw is fixed — hardcode for new campaigns, preserve existing on edit
+        ...(isEditing ? {} : { requirements_zh_tw: "擁有Instagram、Threads帳號者" }),
         precautions_ko: data.precautions_ko || null,
         ...translations,
       };
