@@ -120,6 +120,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           recruitment_count: 1,
           status: "active",
           requirements_ko: "인스타그램, 쓰레드 계정 소지자",
+          guide_ko: "촬영 가이드 및 주의사항은 예약 확정 후 구글 드라이브 링크를 통해 개별 안내드립니다.",
         },
   });
 
@@ -245,7 +246,6 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           brand_name_ko?: string;
           summary_ko?: string;
           description_ko?: string;
-          benefits_ko?: string;
           requirements_ko?: string;
           precautions_ko?: string;
         };
@@ -259,7 +259,6 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             brand_name_ko: data.brand_name_ko || "",
             summary_ko: summaryText,
             description_ko: descriptionText,
-            benefits_ko: data.benefits_ko || "",
             requirements_ko: data.requirements_ko || "",
             precautions_ko: data.precautions_ko || "",
           };
@@ -279,8 +278,6 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             payload.summary_ko = summaryText;
             payload.description_ko = descriptionText;
           }
-          if ((data.benefits_ko || "") !== (c.benefits_ko || ""))
-            payload.benefits_ko = data.benefits_ko || "";
           if ((data.requirements_ko || "") !== (c.requirements_ko || ""))
             payload.requirements_ko = data.requirements_ko || "";
           if ((data.precautions_ko || "") !== (c.precautions_ko || ""))
@@ -374,7 +371,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         brand_name_ko: data.brand_name_ko || "",
         summary_ko: summaryText || "",
         description_ko: descriptionText || "",
-        benefits_ko: data.benefits_ko || "",
+        benefits_ko: "",
         requirements_ko: data.requirements_ko || "",
         precautions_ko: data.precautions_ko || null,
         ...translations,
@@ -466,6 +463,29 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           <CardTitle>기본 정보</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* 브랜드명 / 캠페인명 */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="brand_name_ko">브랜드명</Label>
+              <Input
+                id="brand_name_ko"
+                placeholder="브랜드명을 입력하세요"
+                {...register("brand_name_ko")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="title_ko">캠페인명 *</Label>
+              <Input
+                id="title_ko"
+                placeholder="캠페인 제목을 입력하세요"
+                {...register("title_ko")}
+              />
+              {errors.title_ko && (
+                <p className="text-sm text-destructive">{errors.title_ko.message}</p>
+              )}
+            </div>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2 items-start">
             <div className="space-y-2">
               <Label htmlFor="category">카테고리</Label>
@@ -825,74 +845,29 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
       {/* Korean Content */}
       <Card>
         <CardHeader>
-          <CardTitle>캠페인 내용 (한국어)</CardTitle>
+          <CardTitle>추가 내용 <span className="text-sm font-normal text-muted-foreground">(선택)</span></CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="title_ko">캠페인 제목 *</Label>
-              <Input
-                id="title_ko"
-                placeholder="캠페인 제목을 입력하세요"
-                {...register("title_ko")}
-              />
-              {errors.title_ko && (
-                <p className="text-sm text-destructive">
-                  {errors.title_ko.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="brand_name_ko">브랜드명</Label>
-              <Input
-                id="brand_name_ko"
-                placeholder="브랜드명을 입력하세요"
-                {...register("brand_name_ko")}
-              />
-            </div>
-          </div>
+          {/* 참여 조건: 항상 고정 (숨김) */}
+          <input type="hidden" {...register("requirements_ko")} />
 
           <div className="space-y-2">
-            <Label htmlFor="guide_ko">캠페인 가이드</Label>
+            <Label htmlFor="guide_ko">캠페인 안내문</Label>
             <Textarea
               id="guide_ko"
-              placeholder="캠페인 요약 및 상세 설명을 입력하세요"
-              rows={8}
+              rows={4}
               {...register("guide_ko")}
             />
             <p className="text-xs text-gray-500">
-              캠페인 소개, 참여 방법, 상세 내용 등을 자유롭게 작성해 주세요
+              기본값: 구글 드라이브 안내 문구. 맛집/서비스 등 추가 설명이 있으면 수정하세요
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="benefits_ko">제공 혜택</Label>
-            <Textarea
-              id="benefits_ko"
-              placeholder="체험단에게 제공되는 혜택을 입력하세요"
-              rows={4}
-              {...register("benefits_ko")}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="requirements_ko">참여 조건</Label>
-            <Textarea
-              id="requirements_ko"
-              placeholder="참여 조건을 입력하세요"
-              rows={3}
-              {...register("requirements_ko")}
-            />
-            <p className="text-xs text-gray-500">
-              기본값: 인스타그램, 쓰레드 계정 소지자 (특이사항 있을 경우만 수정)
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="precautions_ko">주의 사항</Label>
+            <Label htmlFor="precautions_ko">주의 사항 <span className="text-xs font-normal text-gray-400">(선택)</span></Label>
             <Textarea
               id="precautions_ko"
-              placeholder="주의 사항을 입력하세요 (선택)"
+              placeholder="주의 사항을 입력하세요"
               rows={3}
               {...register("precautions_ko")}
             />
