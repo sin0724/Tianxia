@@ -91,6 +91,7 @@ export type Database = {
           requirements_zh_tw: string | null;
           precautions_zh_tw: string | null;
           map_url: string | null;
+          map_urls: { label?: string; url: string }[] | null;
           drive_url: string | null;
           service_options: string | null;
           service_options_zh_tw: string | null;
@@ -131,6 +132,7 @@ export type Database = {
           requirements_zh_tw?: string | null;
           precautions_zh_tw?: string | null;
           map_url?: string | null;
+          map_urls?: { label?: string; url: string }[] | null;
           drive_url?: string | null;
           service_options?: string | null;
           service_options_zh_tw?: string | null;
@@ -171,6 +173,7 @@ export type Database = {
           requirements_zh_tw?: string | null;
           precautions_zh_tw?: string | null;
           map_url?: string | null;
+          map_urls?: { label?: string; url: string }[] | null;
           drive_url?: string | null;
           service_options?: string | null;
           service_options_zh_tw?: string | null;

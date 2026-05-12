@@ -234,23 +234,37 @@ export default async function CampaignDetailPage({
             )}
           </div>
 
-          {/* 구글 지도 링크 */}
-          {(campaign as any).map_url && (
-            <div className="mb-8">
-              <a
-                href={(campaign as any).map_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 transition hover:bg-primary/10"
-              >
-                <Map className="h-6 w-6 text-primary" />
-                <div>
-                  <p className="font-medium text-primary">查看地圖位置</p>
-                  <p className="text-sm text-muted-foreground">點擊在 Google 地圖中查看</p>
-                </div>
-              </a>
-            </div>
-          )}
+          {/* 구글 지도 링크 (복수 지원) */}
+          {(() => {
+            const mapUrlsRaw = (campaign as any).map_urls as { label?: string; url: string }[] | null;
+            const entries = mapUrlsRaw && mapUrlsRaw.length > 0
+              ? mapUrlsRaw
+              : (campaign as any).map_url
+              ? [{ url: (campaign as any).map_url as string }]
+              : [];
+            if (entries.length === 0) return null;
+            return (
+              <div className="mb-8 space-y-2">
+                {entries.map((entry, idx) => (
+                  <a
+                    key={idx}
+                    href={entry.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 transition hover:bg-primary/10"
+                  >
+                    <Map className="h-5 w-5 shrink-0 text-primary" />
+                    <div>
+                      <p className="font-medium text-primary">
+                        {entry.label || (entries.length > 1 ? `地點 ${idx + 1}` : "查看地圖位置")}
+                      </p>
+                      <p className="text-sm text-muted-foreground">點擊在 Google 地圖中查看</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Description */}
           <Card className="mb-6">

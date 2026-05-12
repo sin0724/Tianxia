@@ -23,7 +23,7 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
 import { KOREA_REGIONS } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
-import { Upload, X, ImageIcon } from "lucide-react";
+import { Upload, X, ImageIcon, Plus, Trash2 } from "lucide-react";
 import type { Campaign, Category } from "@/types/database";
 
 interface CampaignFormProps {
@@ -46,9 +46,13 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
     campaign?.thumbnail_url || ""
   );
-  const [mapUrl, setMapUrl] = useState<string>(
-    (campaign as any)?.map_url || ""
-  );
+  const [mapUrls, setMapUrls] = useState<{ label: string; url: string }[]>(() => {
+    const saved = (campaign as any)?.map_urls as { label?: string; url: string }[] | null;
+    if (saved && saved.length > 0) return saved.map((e) => ({ label: e.label || "", url: e.url }));
+    const single = (campaign as any)?.map_url as string | null;
+    if (single) return [{ label: "", url: single }];
+    return [];
+  });
   const [driveUrl, setDriveUrl] = useState<string>(
     (campaign as any)?.drive_url || ""
   );
@@ -339,7 +343,8 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         region: data.region || "",
         platforms: selectedPlatforms,
         thumbnail_url: thumbnailUrl || null,
-        map_url: mapUrl || null,
+        map_url: mapUrls[0]?.url || null,
+        map_urls: mapUrls.filter((e) => e.url.trim()).map((e) => ({ label: e.label.trim() || undefined, url: e.url.trim() })),
         drive_url: driveUrl || null,
         is_delivery: isDelivery,
         service_options: serviceOptions.trim() || null,
@@ -637,17 +642,51 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             </div>
           </div>
 
-          {/* 구글 지도 링크 */}
+          {/* 구글 지도 링크 (복수) */}
           <div className="space-y-2">
-            <Label htmlFor="map_url">구글 지도 링크</Label>
-            <Input
-              id="map_url"
-              placeholder="https://maps.google.com/..."
-              value={mapUrl}
-              onChange={(e) => setMapUrl(e.target.value)}
-            />
+            <div className="flex items-center justify-between">
+              <Label>구글 지도 링크</Label>
+              <button
+                type="button"
+                onClick={() => setMapUrls((prev) => [...prev, { label: "", url: "" }])}
+                className="flex items-center gap-1 rounded-full border border-primary/30 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                지도 추가
+              </button>
+            </div>
+            {mapUrls.length === 0 && (
+              <p className="text-xs text-gray-400">지도 링크가 없습니다. "지도 추가" 버튼으로 추가하세요</p>
+            )}
+            <div className="space-y-2">
+              {mapUrls.map((entry, idx) => (
+                <div key={idx} className="flex gap-2 items-start">
+                  <div className="flex flex-1 gap-2">
+                    <Input
+                      placeholder="지점명 (예: 台北信義店)"
+                      value={entry.label}
+                      onChange={(e) => setMapUrls((prev) => prev.map((item, i) => i === idx ? { ...item, label: e.target.value } : item))}
+                      className="w-36 shrink-0 text-sm"
+                    />
+                    <Input
+                      placeholder="https://maps.google.com/..."
+                      value={entry.url}
+                      onChange={(e) => setMapUrls((prev) => prev.map((item, i) => i === idx ? { ...item, url: e.target.value } : item))}
+                      className="flex-1 text-sm"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMapUrls((prev) => prev.filter((_, i) => i !== idx))}
+                    className="mt-2 rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
             <p className="text-xs text-gray-500">
-              구글 지도에서 위치를 검색 후 "공유" → "링크 복사"하여 붙여넣기
+              구글 지도 "공유" → "링크 복사". 지점명은 비워도 됩니다
             </p>
           </div>
 
