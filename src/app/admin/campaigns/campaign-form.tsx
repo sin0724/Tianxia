@@ -115,9 +115,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           min_followers: (campaign as any).min_followers ?? null,
           title_ko: campaign.title_ko,
           brand_name_ko: campaign.brand_name_ko || "",
-          guide_ko: campaign.summary_ko
-            ? `${campaign.summary_ko}${campaign.description_ko ? "\n\n" + campaign.description_ko : ""}`
-            : campaign.description_ko || "",
+          guide_ko: campaign.description_ko || campaign.summary_ko || "",
           benefits_ko: campaign.benefits_ko || "",
           requirements_ko: campaign.requirements_ko || "",
           precautions_ko: campaign.precautions_ko || "",
@@ -271,9 +269,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         } else {
           // Editing: only translate fields that actually changed
           const c = campaign!;
-          const origGuide = c.summary_ko
-            ? `${c.summary_ko}${c.description_ko ? "\n\n" + c.description_ko : ""}`
-            : c.description_ko || "";
+          const origGuide = c.description_ko || c.summary_ko || "";
 
           payload = {};
           if (data.title_ko !== c.title_ko)
