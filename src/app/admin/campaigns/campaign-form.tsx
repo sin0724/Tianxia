@@ -459,12 +459,21 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
     await saveCampaign(data, false);
   };
 
+  const onValidationError = () => {
+    toast({
+      title: "입력 오류",
+      description: "필수 항목(캠페인명 등)을 확인해 주세요",
+      variant: "destructive",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const selectedCategory = watch("category");
   const selectedRegion = watch("region");
   const selectedStatus = watch("status");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onValidationError)} className="space-y-6">
       {/* Basic Info */}
       <Card>
         <CardHeader>
