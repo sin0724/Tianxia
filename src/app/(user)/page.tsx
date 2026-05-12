@@ -11,9 +11,10 @@ import { KOREA_REGIONS } from "@/constants/regions";
 import type { Category } from "@/types/database";
 
 const CAMPAIGN_TYPES = [
-  { value: "all", label_zh: "全部", icon: "📋" },
-  { value: "experience", label_zh: "體驗型", icon: "🎯" },
-  { value: "delivery", label_zh: "配送型", icon: "📦" },
+  { value: "all", label_zh: "全部", icon: "📋", premium: false },
+  { value: "experience", label_zh: "體驗型", icon: "🎯", premium: false },
+  { value: "delivery", label_zh: "配送型", icon: "📦", premium: false },
+  { value: "premium", label_zh: "Premium", icon: "✦", premium: true },
 ] as const;
 
 const REGION_ALL = { value: "all", label_zh: "全部" } as const;
@@ -120,7 +121,9 @@ export default function HomePage() {
       filtered = filtered.filter((c) => c.region === selectedRegion);
     }
 
-    if (selectedType === "delivery" && deliveryCategoryId) {
+    if (selectedType === "premium") {
+      filtered = filtered.filter((c) => c.campaign_type === "paid");
+    } else if (selectedType === "delivery" && deliveryCategoryId) {
       filtered = filtered.filter((c) => c.category === deliveryCategoryId);
     } else if (selectedType === "experience" && deliveryCategoryId) {
       filtered = filtered.filter((c) => c.category !== deliveryCategoryId);
@@ -274,20 +277,39 @@ export default function HomePage() {
         <div className="border-b border-gray-100">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
-              {CAMPAIGN_TYPES.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => setSelectedType(type.value)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                    selectedType === type.value
-                      ? "bg-primary text-white shadow-sm shadow-primary/20"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  <span>{type.icon}</span>
-                  <span>{type.label_zh}</span>
-                </button>
-              ))}
+              {CAMPAIGN_TYPES.map((type) => {
+                const isSelected = selectedType === type.value;
+                if (type.premium) {
+                  return (
+                    <button
+                      key={type.value}
+                      onClick={() => setSelectedType(type.value)}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                        isSelected
+                          ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-md shadow-amber-200"
+                          : "border border-yellow-300 bg-gradient-to-r from-yellow-50 to-amber-50 text-amber-700 hover:from-yellow-100 hover:to-amber-100"
+                      }`}
+                    >
+                      <span className={isSelected ? "text-white" : "text-amber-500"}>{type.icon}</span>
+                      <span>{type.label_zh}</span>
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    key={type.value}
+                    onClick={() => setSelectedType(type.value)}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      isSelected
+                        ? "bg-primary text-white shadow-sm shadow-primary/20"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    <span>{type.icon}</span>
+                    <span>{type.label_zh}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
