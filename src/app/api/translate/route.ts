@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // 각 필드 최대 길이 검증 (Claude API 과금 남용 방지)
     const MAX_FIELD_LENGTH = 5000;
-    const textFields = ["title_ko", "brand_name_ko", "summary_ko", "description_ko", "benefits_ko", "requirements_ko", "precautions_ko"] as const;
+    const textFields = ["title_ko", "brand_name_ko", "summary_ko", "description_ko", "benefits_ko", "requirements_ko", "precautions_ko", "service_options_ko"] as const;
     const body = rawBody as Record<string, unknown>;
     for (const field of textFields) {
       const val = body[field];

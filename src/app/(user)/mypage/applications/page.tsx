@@ -44,7 +44,7 @@ export default async function MyApplicationsPage() {
         id, title_zh_tw, title_ko,
         brand_name_zh_tw, brand_name_ko,
         thumbnail_url, experience_date, review_deadline,
-        drive_url, service_options
+        drive_url, service_options, service_options_zh_tw
       ),
       schedule_proposals (
         proposed_dates, preferred_time, message, confirmed_date
@@ -91,6 +91,7 @@ export default async function MyApplicationsPage() {
               review_deadline: string;
               drive_url: string | null;
               service_options: string | null;
+              service_options_zh_tw: string | null;
             };
 
             const scheduleProposal = Array.isArray(application.schedule_proposals)
@@ -101,8 +102,9 @@ export default async function MyApplicationsPage() {
               ? (application.reservation_info[0] as { visitor_name: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; selected_service: string | null; special_requests: string | null } | undefined)
               : application.reservation_info as { visitor_name: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; selected_service: string | null; special_requests: string | null } | null;
 
-            const serviceOptions = campaign.service_options
-              ? campaign.service_options.split("\n").map((s) => s.trim()).filter(Boolean)
+            const rawOpts = campaign.service_options_zh_tw || campaign.service_options;
+            const serviceOptions = rawOpts
+              ? rawOpts.split("\n").map((s) => s.trim()).filter(Boolean)
               : undefined;
 
             const status = application.status as ApplicationStatus;

@@ -90,8 +90,9 @@ export default async function CampaignDetailPage({
   const brandName = campaign.brand_name_zh_tw || campaign.brand_name_ko;
   const summary = campaign.summary_zh_tw || campaign.summary_ko;
   const description = campaign.description_zh_tw || campaign.description_ko;
-  const serviceOptions = (campaign as any).service_options
-    ? ((campaign as any).service_options as string).split("\n").map((s: string) => s.trim()).filter(Boolean)
+  const rawServiceOptions = (campaign as any).service_options_zh_tw || (campaign as any).service_options;
+  const serviceOptions = rawServiceOptions
+    ? (rawServiceOptions as string).split("\n").map((s: string) => s.trim()).filter(Boolean)
     : null;
   const requirements = campaign.requirements_zh_tw || campaign.requirements_ko;
   const precautions = campaign.precautions_zh_tw || campaign.precautions_ko;

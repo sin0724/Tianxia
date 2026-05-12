@@ -8,6 +8,7 @@ export interface CampaignTranslationInput {
   benefits_ko?: string;
   requirements_ko?: string;
   precautions_ko?: string;
+  service_options_ko?: string;
 }
 
 export interface CampaignTranslationOutput {
@@ -18,6 +19,7 @@ export interface CampaignTranslationOutput {
   benefits_zh_tw?: string | null;
   requirements_zh_tw?: string | null;
   precautions_zh_tw?: string | null;
+  service_options_zh_tw?: string | null;
 }
 
 export async function translateCampaignToZhTw(
@@ -36,6 +38,7 @@ export async function translateCampaignToZhTw(
   if (input.benefits_ko !== undefined) fieldsToTranslate.benefits = input.benefits_ko;
   if (input.requirements_ko !== undefined) fieldsToTranslate.requirements = input.requirements_ko;
   if (input.precautions_ko !== undefined) fieldsToTranslate.precautions = input.precautions_ko;
+  if (input.service_options_ko !== undefined) fieldsToTranslate.service_options = input.service_options_ko;
 
   const hasContent = Object.values(fieldsToTranslate).some((v) => v.trim() !== "");
   if (!hasContent) {
@@ -53,6 +56,7 @@ export async function translateCampaignToZhTw(
 2. 保持原文的語氣和風格
 3. 專有名詞和品牌名稱請適當音譯或保留原文
 4. 翻譯要自然流暢，符合台灣讀者的閱讀習慣
+5. 英文單詞請直接保留英文原文，不需要翻譯（例如：Instagram、Lifting、Botox、Filler 等）
 
 請將以下JSON中的韓文內容翻譯成繁體中文，並以相同的JSON格式回覆（只需要回覆JSON，不要有其他文字）：
 
@@ -109,5 +113,6 @@ ${JSON.stringify(fieldsToTranslate, null, 2)}`;
   if ("benefits" in fieldsToTranslate) result.benefits_zh_tw = translated.benefits || "";
   if ("requirements" in fieldsToTranslate) result.requirements_zh_tw = translated.requirements || "";
   if ("precautions" in fieldsToTranslate) result.precautions_zh_tw = translated.precautions || null;
+  if ("service_options" in fieldsToTranslate) result.service_options_zh_tw = translated.service_options || null;
   return result;
 }

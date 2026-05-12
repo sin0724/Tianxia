@@ -247,6 +247,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           summary_ko?: string;
           description_ko?: string;
           precautions_ko?: string;
+          service_options_ko?: string;
         };
 
         let payload: TranslatePayload;
@@ -259,6 +260,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             summary_ko: summaryText,
             description_ko: descriptionText,
             ...(data.precautions_ko ? { precautions_ko: data.precautions_ko } : {}),
+            ...(serviceOptions.trim() ? { service_options_ko: serviceOptions.trim() } : {}),
           };
         } else {
           // Editing: only translate fields that actually changed
@@ -278,6 +280,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           }
           if ((data.precautions_ko || "") !== (c.precautions_ko || ""))
             payload.precautions_ko = data.precautions_ko || "";
+          const origServiceOptions = (campaign as any)?.service_options || "";
+          if (serviceOptions.trim() !== origServiceOptions)
+            payload.service_options_ko = serviceOptions.trim();
         }
 
         if (Object.keys(payload).length > 0) {

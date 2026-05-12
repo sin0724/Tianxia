@@ -92,6 +92,7 @@ export type Database = {
           map_url: string | null;
           drive_url: string | null;
           service_options: string | null;
+          service_options_zh_tw: string | null;
           platforms: string[];
           created_by: string | null;
           created_at: string;
@@ -129,6 +130,7 @@ export type Database = {
           map_url?: string | null;
           drive_url?: string | null;
           service_options?: string | null;
+          service_options_zh_tw?: string | null;
           platforms?: string[];
           created_by?: string | null;
           created_at?: string;
@@ -166,6 +168,7 @@ export type Database = {
           map_url?: string | null;
           drive_url?: string | null;
           service_options?: string | null;
+          service_options_zh_tw?: string | null;
           platforms?: string[];
           created_by?: string | null;
           created_at?: string;
