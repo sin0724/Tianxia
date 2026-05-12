@@ -71,6 +71,9 @@ export type Database = {
           experience_date: string;
           review_deadline: string;
           status: "draft" | "active" | "closed";
+          campaign_type: "free" | "paid";
+          payment_amount: number | null;
+          min_followers: number | null;
           title_ko: string;
           brand_name_ko: string;
           summary_ko: string;
@@ -102,6 +105,9 @@ export type Database = {
           experience_date: string;
           review_deadline: string;
           status?: "draft" | "active" | "closed";
+          campaign_type?: "free" | "paid";
+          payment_amount?: number | null;
+          min_followers?: number | null;
           title_ko: string;
           brand_name_ko: string;
           summary_ko: string;
@@ -133,6 +139,9 @@ export type Database = {
           experience_date?: string;
           review_deadline?: string;
           status?: "draft" | "active" | "closed";
+          campaign_type?: "free" | "paid";
+          payment_amount?: number | null;
+          min_followers?: number | null;
           title_ko?: string;
           brand_name_ko?: string;
           summary_ko?: string;
@@ -165,7 +174,7 @@ export type Database = {
           applied_facebook_url: string | null;
           applied_youtube_url: string | null;
           applied_dcard_url: string | null;
-          status: "pending" | "approved" | "rejected";
+          status: ApplicationStatus;
           admin_note: string | null;
           applied_at: string;
           updated_at: string;
@@ -180,7 +189,7 @@ export type Database = {
           applied_facebook_url?: string | null;
           applied_youtube_url?: string | null;
           applied_dcard_url?: string | null;
-          status?: "pending" | "approved" | "rejected";
+          status?: ApplicationStatus;
           admin_note?: string | null;
           applied_at?: string;
           updated_at?: string;
@@ -195,9 +204,76 @@ export type Database = {
           applied_facebook_url?: string | null;
           applied_youtube_url?: string | null;
           applied_dcard_url?: string | null;
-          status?: "pending" | "approved" | "rejected";
+          status?: ApplicationStatus;
           admin_note?: string | null;
           applied_at?: string;
+          updated_at?: string;
+        };
+      };
+      schedule_proposals: {
+        Row: {
+          id: string;
+          application_id: string;
+          proposed_dates: string[];
+          preferred_time: string | null;
+          message: string | null;
+          confirmed_date: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          proposed_dates: string[];
+          preferred_time?: string | null;
+          message?: string | null;
+          confirmed_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          application_id?: string;
+          proposed_dates?: string[];
+          preferred_time?: string | null;
+          message?: string | null;
+          confirmed_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      reservation_info: {
+        Row: {
+          id: string;
+          application_id: string;
+          visitor_name: string;
+          reservation_datetime: string;
+          emergency_contact: string;
+          line_id: string | null;
+          special_requests: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          visitor_name: string;
+          reservation_datetime: string;
+          emergency_contact: string;
+          line_id?: string | null;
+          special_requests?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          application_id?: string;
+          visitor_name?: string;
+          reservation_datetime?: string;
+          emergency_contact?: string;
+          line_id?: string | null;
+          special_requests?: string | null;
+          created_at?: string;
           updated_at?: string;
         };
       };
@@ -243,11 +319,21 @@ export type Database = {
     Enums: {
       user_role: "user" | "admin";
       campaign_status: "draft" | "active" | "closed";
-      application_status: "pending" | "approved" | "rejected";
+      application_status: ApplicationStatus;
       review_status: "pending" | "submitted" | "approved";
     };
   };
 };
+
+export type ApplicationStatus =
+  | "pending"
+  | "approved"
+  | "schedule_proposed"
+  | "scheduled"
+  | "reservation_submitted"
+  | "visit_confirmed"
+  | "completed"
+  | "rejected";
 
 export type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
@@ -262,6 +348,8 @@ export type Profile = Tables<"profiles">;
 export type Campaign = Tables<"campaigns">;
 export type Application = Tables<"applications">;
 export type Review = Tables<"reviews">;
+export type ScheduleProposal = Tables<"schedule_proposals">;
+export type ReservationInfo = Tables<"reservation_info">;
 
 export type Category = {
   id: string;

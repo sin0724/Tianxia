@@ -46,7 +46,7 @@ export default async function MyReviewsPage() {
     `
     )
     .eq("user_id", user.id)
-    .eq("status", "approved")
+    .in("status", ["approved", "visit_confirmed", "completed"])
     .order("applied_at", { ascending: false });
 
   return (

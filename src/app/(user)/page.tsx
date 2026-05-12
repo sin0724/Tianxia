@@ -52,6 +52,9 @@ interface CampaignWithCount {
   status: string;
   application_count: number;
   bonus_application_count: number;
+  campaign_type: "free" | "paid";
+  payment_amount: number | null;
+  min_followers: number | null;
 }
 
 export default function HomePage() {
@@ -103,8 +106,11 @@ export default function HomePage() {
           ...campaign,
           application_count: (campaign as any).applications?.[0]?.count ?? 0,
           bonus_application_count: campaign.bonus_application_count ?? 0,
+          campaign_type: (campaign as any).campaign_type ?? "free",
+          payment_amount: (campaign as any).payment_amount ?? null,
+          min_followers: (campaign as any).min_followers ?? null,
         }));
-        setAllCampaigns(campaignsWithCount);
+        setAllCampaigns(campaignsWithCount as CampaignWithCount[]);
       }
 
       setLoading(false);
@@ -153,6 +159,11 @@ export default function HomePage() {
 
     return filtered.slice(0, 6);
   }, [allCampaigns, selectedRegion, selectedType, selectedCategory, deliveryCategoryId, sortBy]);
+
+  const premiumCampaigns = useMemo(
+    () => allCampaigns.filter((c) => c.campaign_type === "paid").slice(0, 4),
+    [allCampaigns]
+  );
 
   const featuredCategories = useMemo(
     () => categories.filter((c) => c.is_featured),
@@ -376,6 +387,40 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {/* PREMIUM 캠페인 섹션 */}
+      {premiumCampaigns.length > 0 && (
+        <section className="py-8 md:py-10 bg-gradient-to-b from-amber-50 to-white border-b border-amber-100">
+          <div className="container mx-auto px-4">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-0.5 text-xs font-bold text-white shadow-sm">
+                    ⭐ PREMIUM
+                  </span>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">유료합작 체험단</h2>
+                <p className="text-sm text-gray-500">제품/서비스 제공 + 협찬비 지급</p>
+              </div>
+              <Link href="/campaigns?type=paid">
+                <Button variant="ghost" className="gap-1.5 text-sm text-amber-600 hover:text-amber-700 hover:bg-amber-50 px-3">
+                  전체보기
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {premiumCampaigns.map((campaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign as any}
+                  categories={categories}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Campaign List Section */}
       <section className="py-8 md:py-12">

@@ -52,6 +52,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
   const [bonusCount, setBonusCount] = useState<number>(
     campaign?.bonus_application_count ?? 0
   );
+  const [campaignType, setCampaignType] = useState<"free" | "paid">(
+    (campaign as any)?.campaign_type ?? "free"
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = !!campaign;
 
@@ -85,6 +88,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           experience_date: campaign.experience_date?.split("T")[0] || "",
           review_deadline: campaign.review_deadline?.split("T")[0] || "",
           status: campaign.status,
+          campaign_type: (campaign as any).campaign_type ?? "free",
+          payment_amount: (campaign as any).payment_amount ?? null,
+          min_followers: (campaign as any).min_followers ?? null,
           title_ko: campaign.title_ko,
           brand_name_ko: campaign.brand_name_ko || "",
           guide_ko: campaign.summary_ko
@@ -287,6 +293,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           ? new Date(data.review_deadline).toISOString()
           : null,
         status: data.status,
+        campaign_type: campaignType,
+        payment_amount: campaignType === "paid" ? (data.payment_amount ?? null) : null,
+        min_followers: data.min_followers ?? null,
         title_ko: data.title_ko,
         brand_name_ko: data.brand_name_ko || "",
         summary_ko: summaryText || "",
@@ -609,6 +618,74 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
                 <SelectItem value="closed">마감</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* 캠페인 타입 (무료/유료) */}
+          <div className="space-y-3 rounded-lg border-2 border-dashed p-4">
+            <Label>캠페인 유형</Label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setCampaignType("free")}
+                className={`flex-1 rounded-lg border-2 p-3 text-sm font-medium transition-all ${
+                  campaignType === "free"
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                <div className="text-base">🎁</div>
+                <div>무료합작</div>
+                <div className="mt-0.5 text-xs font-normal text-muted-foreground">제품/서비스 제공</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCampaignType("paid")}
+                className={`flex-1 rounded-lg border-2 p-3 text-sm font-medium transition-all ${
+                  campaignType === "paid"
+                    ? "border-yellow-500 bg-yellow-50 text-yellow-700"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                <div className="text-base">⭐</div>
+                <div>유료합작 PREMIUM</div>
+                <div className="mt-0.5 text-xs font-normal text-muted-foreground">제품/서비스 + 협찬비</div>
+              </button>
+            </div>
+
+            {campaignType === "paid" && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-sm">협찬비 (₩)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="예: 150000"
+                    {...register("payment_amount", { valueAsNumber: true })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm">최소 팔로워 수</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="예: 5000"
+                    {...register("min_followers", { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {campaignType === "free" && (
+              <div className="space-y-1">
+                <Label className="text-sm">최소 팔로워 수 (선택)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="미입력 시 제한 없음"
+                  {...register("min_followers", { valueAsNumber: true })}
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

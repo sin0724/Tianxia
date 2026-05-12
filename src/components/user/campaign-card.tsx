@@ -92,6 +92,8 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
   const bonusCount = campaign.bonus_application_count ?? 0;
   const displayCount = realCount + bonusCount;
   const platforms: string[] = (campaign as any).platforms || ["instagram"];
+  const isPremium = (campaign as any).campaign_type === "paid";
+  const paymentAmount = (campaign as any).payment_amount as number | null;
   
   const recruitmentCount = campaign.recruitment_count || 1;
   const percentage = Math.round((displayCount / recruitmentCount) * 100);
@@ -100,7 +102,11 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
 
   return (
     <Link href={`/campaigns/${campaign.id}`}>
-      <div className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-xl hover:shadow-gray-200/70 hover:-translate-y-0.5">
+      <div className={`group overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 ${
+        isPremium
+          ? "border-yellow-300 shadow-yellow-100/60 hover:shadow-yellow-200/70"
+          : "border-gray-100 hover:shadow-gray-200/70"
+      }`}>
         <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
           {campaign.thumbnail_url ? (
             <Image
@@ -110,9 +116,16 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-              <span className="text-5xl opacity-60">🎁</span>
+            <div className={`flex h-full items-center justify-center bg-gradient-to-br ${
+              isPremium ? "from-yellow-50 to-amber-100" : "from-gray-50 to-gray-100"
+            }`}>
+              <span className="text-5xl opacity-60">{isPremium ? "⭐" : "🎁"}</span>
             </div>
+          )}
+
+          {/* Premium overlay gradient */}
+          {isPremium && (
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-400" />
           )}
 
           {/* Bottom gradient overlay */}
@@ -130,14 +143,21 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
             ))}
           </div>
 
+          {/* PREMIUM Badge */}
+          {isPremium && (
+            <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-md">
+              ⭐ PREMIUM
+            </div>
+          )}
+
           {/* D-Day Badge */}
-          {daysRemaining <= 3 && daysRemaining > 0 && (
+          {!isPremium && daysRemaining <= 3 && daysRemaining > 0 && (
             <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-sm">
               D-{daysRemaining}
             </div>
           )}
           {daysRemaining <= 0 && (
-            <div className="absolute right-3 top-3 rounded-full bg-gray-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+            <div className={`absolute ${isPremium ? "right-[5.5rem]" : "right-3"} top-3 rounded-full bg-gray-600 px-3 py-1 text-xs font-semibold text-white shadow-sm`}>
               已截止
             </div>
           )}
@@ -168,10 +188,15 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
             </div>
           </div>
 
-          <div className="mb-1.5 flex items-center gap-2">
+          <div className="mb-1.5 flex items-center gap-2 flex-wrap">
             {category && (
               <span className="rounded-full bg-gray-50 border border-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-500">
                 {category.icon} {categoryLabel}
+              </span>
+            )}
+            {isPremium && paymentAmount && paymentAmount > 0 && (
+              <span className="rounded-full bg-yellow-100 border border-yellow-200 px-2.5 py-0.5 text-[11px] font-semibold text-yellow-700">
+                💰 ₩{paymentAmount.toLocaleString()}
               </span>
             )}
           </div>

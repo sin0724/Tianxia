@@ -34,6 +34,9 @@ interface CampaignWithCount {
   status: string;
   application_count: number;
   bonus_application_count: number;
+  campaign_type: "free" | "paid";
+  payment_amount: number | null;
+  min_followers: number | null;
 }
 
 type SortOption = "popular" | "deadline" | "latest";
@@ -57,6 +60,9 @@ export default function CampaignsPage() {
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "all");
   const [selectedRegion, setSelectedRegion] = useState(searchParams.get("region") || "all");
   const [selectedPlatform, setSelectedPlatform] = useState(searchParams.get("platform") || "all");
+  const [selectedCampaignType, setSelectedCampaignType] = useState<"all" | "free" | "paid">(
+    (searchParams.get("type") as "all" | "free" | "paid") || "all"
+  );
   const [sortBy, setSortBy] = useState<SortOption>((searchParams.get("sort") as SortOption) || "popular");
 
   const supabase = createBrowserClient(
@@ -111,7 +117,17 @@ export default function CampaignsPage() {
       ...campaign,
       application_count: (campaign as any).applications?.[0]?.count ?? 0,
       bonus_application_count: campaign.bonus_application_count ?? 0,
+      campaign_type: (campaign as any).campaign_type ?? "free",
+      payment_amount: (campaign as any).payment_amount ?? null,
+      min_followers: (campaign as any).min_followers ?? null,
     }));
+
+    // Campaign type filter (유료/무료)
+    if (selectedCampaignType !== "all") {
+      processedCampaigns = processedCampaigns.filter(
+        (c) => c.campaign_type === selectedCampaignType
+      );
+    }
 
     // Sort
     switch (sortBy) {
@@ -148,7 +164,7 @@ export default function CampaignsPage() {
     setHasMore(end < processedCampaigns.length);
     setLoading(false);
     setLoadingMore(false);
-  }, [selectedCategory, selectedRegion, selectedPlatform, searchQuery, sortBy]);
+  }, [selectedCategory, selectedRegion, selectedPlatform, selectedCampaignType, searchQuery, sortBy]);
 
   const fetchCategories = async () => {
     const { data } = await supabase
@@ -349,6 +365,30 @@ export default function CampaignsPage() {
             )}
           </div>
         )}
+
+        {/* 유료/무료 탭 필터 */}
+        <div className="mb-4 flex items-center gap-2">
+          {([
+            { value: "all",  label: "全部", icon: "📋" },
+            { value: "free", label: "免費合作", icon: "🎁" },
+            { value: "paid", label: "⭐ PREMIUM", icon: "" },
+          ] as const).map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setSelectedCampaignType(tab.value)}
+              className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                selectedCampaignType === tab.value
+                  ? tab.value === "paid"
+                    ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-sm"
+                    : "bg-primary text-white shadow-sm"
+                  : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
+              }`}
+            >
+              {tab.icon && <span>{tab.icon}</span>}
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
 
         {/* Results Count */}
         <div className="mb-4 text-xs font-medium text-gray-400">

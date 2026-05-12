@@ -8,6 +8,22 @@ import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
 import { Search } from "lucide-react";
 import { ApplicationActions } from "./application-actions";
+import type { ApplicationStatus } from "@/types/database";
+
+interface ScheduleProposal {
+  proposed_dates: string[];
+  preferred_time: string | null;
+  message: string | null;
+  confirmed_date: string | null;
+}
+
+interface ReservationInfo {
+  visitor_name: string;
+  reservation_datetime: string;
+  emergency_contact: string;
+  line_id: string | null;
+  special_requests: string | null;
+}
 
 interface Application {
   id: string;
@@ -19,7 +35,7 @@ interface Application {
   applied_facebook_url: string | null;
   applied_youtube_url: string | null;
   applied_dcard_url: string | null;
-  status: string;
+  status: ApplicationStatus;
   admin_note: string | null;
   applied_at: string;
   profiles: {
@@ -34,9 +50,34 @@ interface Application {
     title_ko: string;
     brand_name_ko: string;
   } | null;
+  schedule_proposals: ScheduleProposal | null;
+  reservation_info: ReservationInfo | null;
 }
 
-type StatusFilter = "all" | "pending" | "approved" | "rejected";
+type StatusFilter = "all" | ApplicationStatus;
+
+const STATUS_CONFIG: Record<ApplicationStatus, { label: string; color: string }> = {
+  pending:               { label: "대기",       color: "bg-gray-100 text-gray-700" },
+  approved:              { label: "승인",       color: "bg-green-100 text-green-700" },
+  schedule_proposed:     { label: "일정제안",   color: "bg-blue-100 text-blue-700" },
+  scheduled:             { label: "일정확정",   color: "bg-indigo-100 text-indigo-700" },
+  reservation_submitted: { label: "예약접수",   color: "bg-orange-100 text-orange-700" },
+  visit_confirmed:       { label: "예약확정",   color: "bg-teal-100 text-teal-700" },
+  completed:             { label: "완료",       color: "bg-purple-100 text-purple-700" },
+  rejected:              { label: "반려",       color: "bg-red-100 text-red-700" },
+};
+
+const STATUS_TABS: { value: StatusFilter; label: string }[] = [
+  { value: "all",                label: "전체" },
+  { value: "pending",            label: "대기" },
+  { value: "approved",           label: "승인" },
+  { value: "schedule_proposed",  label: "일정제안" },
+  { value: "scheduled",          label: "일정확정" },
+  { value: "reservation_submitted", label: "예약접수" },
+  { value: "visit_confirmed",    label: "예약확정" },
+  { value: "completed",          label: "완료" },
+  { value: "rejected",           label: "반려" },
+];
 
 export default function AdminApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -50,16 +91,22 @@ export default function AdminApplicationsPage() {
     setLoading(true);
     const { data } = await supabase
       .from("applications")
-      .select(
-        `
+      .select(`
         *,
         profiles (id, name, email, instagram_handle, region),
-        campaigns (id, title_ko, brand_name_ko)
-      `
-      )
+        campaigns (id, title_ko, brand_name_ko),
+        schedule_proposals (proposed_dates, preferred_time, message, confirmed_date),
+        reservation_info (visitor_name, reservation_datetime, emergency_contact, line_id, special_requests)
+      `)
       .order("applied_at", { ascending: false });
 
-    if (data) setApplications(data as unknown as Application[]);
+    if (data) {
+      setApplications(data.map((a) => ({
+        ...a,
+        schedule_proposals: Array.isArray(a.schedule_proposals) ? a.schedule_proposals[0] ?? null : a.schedule_proposals,
+        reservation_info: Array.isArray(a.reservation_info) ? a.reservation_info[0] ?? null : a.reservation_info,
+      })) as unknown as Application[]);
+    }
     setLoading(false);
   };
 
@@ -68,25 +115,17 @@ export default function AdminApplicationsPage() {
 
     const channel = supabase
       .channel("applications-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "applications" },
-        () => fetchApplications()
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "applications" }, () => fetchApplications())
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const filteredApplications = useMemo(() => {
     let filtered = applications;
-
     if (statusFilter !== "all") {
       filtered = filtered.filter((a) => a.status === statusFilter);
     }
-
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((a) => {
@@ -95,51 +134,24 @@ export default function AdminApplicationsPage() {
         const instagram = a.profiles?.instagram_handle?.toLowerCase() || "";
         const campaignTitle = a.campaigns?.title_ko?.toLowerCase() || "";
         const brandName = a.campaigns?.brand_name_ko?.toLowerCase() || "";
-        return (
-          name.includes(q) ||
-          email.includes(q) ||
-          instagram.includes(q) ||
-          campaignTitle.includes(q) ||
-          brandName.includes(q)
-        );
+        return name.includes(q) || email.includes(q) || instagram.includes(q) || campaignTitle.includes(q) || brandName.includes(q);
       });
     }
-
     return filtered;
   }, [applications, statusFilter, searchQuery]);
 
   const statusCounts = useMemo(() => {
-    const counts = { all: applications.length, pending: 0, approved: 0, rejected: 0 };
+    const counts: Record<string, number> = { all: applications.length };
     applications.forEach((a) => {
-      if (a.status === "pending") counts.pending++;
-      else if (a.status === "approved") counts.approved++;
-      else if (a.status === "rejected") counts.rejected++;
+      counts[a.status] = (counts[a.status] || 0) + 1;
     });
     return counts;
   }, [applications]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "approved":
-        return <Badge variant="success">승인</Badge>;
-      case "rejected":
-        return <Badge variant="destructive">반려</Badge>;
-      default:
-        return <Badge variant="secondary">대기</Badge>;
-    }
-  };
-
-  const STATUS_TABS: { value: StatusFilter; label: string }[] = [
-    { value: "all", label: "전체" },
-    { value: "pending", label: "대기" },
-    { value: "approved", label: "승인" },
-    { value: "rejected", label: "반려" },
-  ];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-primary" />
       </div>
     );
   }
@@ -148,7 +160,7 @@ export default function AdminApplicationsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">신청 관리</h2>
-        <p className="text-muted-foreground">캠페인 신청을 승인하거나 반려합니다</p>
+        <p className="text-muted-foreground">캠페인 신청 전체 플로우를 관리합니다</p>
       </div>
 
       {/* 상태 필터 탭 */}
@@ -165,13 +177,12 @@ export default function AdminApplicationsPage() {
           >
             {tab.label}
             <span className="ml-1.5 rounded-full bg-white/20 px-1.5 py-0.5 text-xs">
-              {statusCounts[tab.value]}
+              {statusCounts[tab.value] ?? 0}
             </span>
           </button>
         ))}
       </div>
 
-      {/* 검색 */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
@@ -182,17 +193,14 @@ export default function AdminApplicationsPage() {
         />
       </div>
 
-      {/* 결과 수 */}
-      <p className="text-sm text-muted-foreground">
-        {filteredApplications.length}건의 신청
-      </p>
+      <p className="text-sm text-muted-foreground">{filteredApplications.length}건의 신청</p>
 
-      {/* 신청 목록 */}
       {filteredApplications.length > 0 ? (
         <div className="space-y-4">
           {filteredApplications.map((application) => {
             const profile = application.profiles;
             const campaign = application.campaigns;
+            const config = STATUS_CONFIG[application.status];
 
             return (
               <Card key={application.id}>
@@ -200,121 +208,101 @@ export default function AdminApplicationsPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        {campaign?.brand_name_ko || "알 수 없음"} -{" "}
-                        {campaign?.title_ko || "알 수 없음"}
+                        {campaign?.brand_name_ko || "알 수 없음"} - {campaign?.title_ko || "알 수 없음"}
                       </p>
-                      <CardTitle className="text-lg">
-                        {profile?.name || "알 수 없음"}
-                      </CardTitle>
+                      <CardTitle className="text-lg">{profile?.name || "알 수 없음"}</CardTitle>
                     </div>
-                    {getStatusBadge(application.status)}
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${config.color}`}>
+                      {config.label}
+                    </span>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="mb-4 grid gap-2 text-sm md:grid-cols-2 lg:grid-cols-4">
-                    <div>
-                      <span className="text-muted-foreground">이메일: </span>
-                      {profile?.email}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Instagram: </span>
-                      @{profile?.instagram_handle}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">지역: </span>
-                      {profile?.region}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">신청일: </span>
-                      {formatDate(application.applied_at, "ko")}
-                    </div>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-2 text-sm md:grid-cols-2 lg:grid-cols-4">
+                    <div><span className="text-muted-foreground">이메일: </span>{profile?.email}</div>
+                    <div><span className="text-muted-foreground">Instagram: </span>@{profile?.instagram_handle}</div>
+                    <div><span className="text-muted-foreground">지역: </span>{profile?.region}</div>
+                    <div><span className="text-muted-foreground">신청일: </span>{formatDate(application.applied_at, "ko")}</div>
                   </div>
 
                   {application.message && (
-                    <div className="mb-4 rounded-md bg-muted p-3">
+                    <div className="rounded-md bg-muted p-3">
                       <p className="text-sm font-medium">신청 메시지:</p>
-                      <p className="text-sm text-muted-foreground">
-                        {application.message}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{application.message}</p>
                     </div>
                   )}
 
-                  <div className="mb-4 space-y-1 text-sm">
-                    <p>
-                      <span className="text-muted-foreground">Instagram: </span>
-                      <a
-                        href={application.applied_instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        {application.applied_instagram_url}
-                      </a>
-                    </p>
+                  <div className="space-y-1 text-sm">
+                    <a href={application.applied_instagram_url} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline">
+                      Instagram: {application.applied_instagram_url}
+                    </a>
                     {application.applied_threads_url && (
-                      <p>
-                        <span className="text-muted-foreground">Threads: </span>
-                        <a
-                          href={application.applied_threads_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {application.applied_threads_url}
-                        </a>
-                      </p>
-                    )}
-                    {application.applied_facebook_url && (
-                      <p>
-                        <span className="text-muted-foreground">Facebook: </span>
-                        <a
-                          href={application.applied_facebook_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {application.applied_facebook_url}
-                        </a>
-                      </p>
+                      <a href={application.applied_threads_url} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline">
+                        Threads: {application.applied_threads_url}
+                      </a>
                     )}
                     {application.applied_youtube_url && (
-                      <p>
-                        <span className="text-muted-foreground">YouTube: </span>
-                        <a
-                          href={application.applied_youtube_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {application.applied_youtube_url}
-                        </a>
-                      </p>
-                    )}
-                    {application.applied_dcard_url && (
-                      <p>
-                        <span className="text-muted-foreground">Dcard: </span>
-                        <a
-                          href={application.applied_dcard_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {application.applied_dcard_url}
-                        </a>
-                      </p>
+                      <a href={application.applied_youtube_url} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline">
+                        YouTube: {application.applied_youtube_url}
+                      </a>
                     )}
                   </div>
 
-                  {application.status === "pending" && (
-                    <ApplicationActions applicationId={application.id} onStatusChange={fetchApplications} />
+                  {/* 일정 제안 표시 */}
+                  {application.schedule_proposals && (
+                    <div className="rounded-md bg-blue-50 p-3 text-sm">
+                      <p className="font-medium text-blue-800">제안 일정</p>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {application.schedule_proposals.proposed_dates?.map((d, i) => (
+                          <span key={i} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            application.schedule_proposals?.confirmed_date === d
+                              ? "bg-green-200 text-green-800"
+                              : "bg-blue-100 text-blue-700"
+                          }`}>{d}</span>
+                        ))}
+                      </div>
+                      {application.schedule_proposals.preferred_time && (
+                        <p className="mt-1 text-blue-700">선호시간: {application.schedule_proposals.preferred_time}</p>
+                      )}
+                      {application.schedule_proposals.message && (
+                        <p className="mt-1 text-blue-700">메시지: {application.schedule_proposals.message}</p>
+                      )}
+                    </div>
                   )}
 
+                  {/* 예약 정보 표시 */}
+                  {application.reservation_info && (
+                    <div className="rounded-md bg-green-50 p-3 text-sm">
+                      <p className="font-medium text-green-800">예약 정보</p>
+                      <div className="mt-1 space-y-1 text-green-700">
+                        <div className="grid grid-cols-2 gap-1">
+                          <span>성명: {application.reservation_info.visitor_name}</span>
+                          <span>일시: {application.reservation_info.reservation_datetime}</span>
+                          <span>긴급연락: {application.reservation_info.emergency_contact}</span>
+                          {application.reservation_info.line_id && (
+                            <span>LINE ID: {application.reservation_info.line_id}</span>
+                          )}
+                        </div>
+                        {application.reservation_info.special_requests && (
+                          <p className="mt-1 rounded bg-green-100 px-2 py-1">
+                            비고: {application.reservation_info.special_requests}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <ApplicationActions
+                    applicationId={application.id}
+                    status={application.status}
+                    scheduleProposal={application.schedule_proposals}
+                    onStatusChange={fetchApplications}
+                  />
+
                   {application.admin_note && (
-                    <div className="mt-4 rounded-md border p-3">
+                    <div className="rounded-md border p-3">
                       <p className="text-sm font-medium">관리자 메모:</p>
-                      <p className="text-sm text-muted-foreground">
-                        {application.admin_note}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{application.admin_note}</p>
                     </div>
                   )}
                 </CardContent>
@@ -326,9 +314,7 @@ export default function AdminApplicationsPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
-              {searchQuery || statusFilter !== "all"
-                ? "검색 결과가 없습니다"
-                : "신청 내역이 없습니다"}
+              {searchQuery || statusFilter !== "all" ? "검색 결과가 없습니다" : "신청 내역이 없습니다"}
             </p>
           </CardContent>
         </Card>

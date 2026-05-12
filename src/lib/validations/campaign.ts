@@ -9,6 +9,9 @@ export const campaignSchema = z.object({
   experience_date: z.string().optional(),
   review_deadline: z.string().optional(),
   status: z.enum(["draft", "active", "closed"]).default("active"),
+  campaign_type: z.enum(["free", "paid"]).default("free"),
+  payment_amount: z.number().int().min(0).optional().nullable(),
+  min_followers: z.number().int().min(0).optional().nullable(),
 
   // Korean content (all optional except title)
   title_ko: z.string().min(1, "캠페인 제목을 입력해 주세요"),
