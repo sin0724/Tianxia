@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, CalendarDays, ClipboardList, FileText } from "lucide-react";
+import { ExternalLink, CalendarDays, ClipboardList, FileText, BookOpen } from "lucide-react";
 import { ScheduleForm } from "./schedule-form";
 import { ReservationForm } from "./reservation-form";
 import type { ApplicationStatus } from "@/types/database";
@@ -16,6 +16,7 @@ interface ApplicationStepActionsProps {
   userName?: string;
   userLineId?: string;
   serviceOptions?: string[];
+  driveUrl?: string;
 }
 
 export function ApplicationStepActions({
@@ -26,9 +27,17 @@ export function ApplicationStepActions({
   userName,
   userLineId,
   serviceOptions,
+  driveUrl,
 }: ApplicationStepActionsProps) {
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showReservationForm, setShowReservationForm] = useState(false);
+  const [guideRead, setGuideRead] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem(`guide_read_${applicationId}`) === "true") {
+      setGuideRead(true);
+    }
+  }, [applicationId]);
 
   const reload = () => window.location.reload();
 
@@ -107,20 +116,51 @@ export function ApplicationStepActions({
   }
 
   if (status === "visit_confirmed" || status === "completed") {
+    const handleGuideClick = () => {
+      if (driveUrl) window.open(driveUrl, "_blank");
+      localStorage.setItem(`guide_read_${applicationId}`, "true");
+      setGuideRead(true);
+    };
+
     return (
-      <div className="flex flex-wrap gap-2">
-        <Link href={`/campaigns/${campaignId}`}>
-          <Button variant="outline" size="sm" className="gap-2">
-            <ExternalLink className="h-4 w-4" />
-            查看活動
-          </Button>
-        </Link>
-        <Link href="/mypage/reviews">
-          <Button size="sm" className="gap-2">
-            <FileText className="h-4 w-4" />
-            提交後記
-          </Button>
-        </Link>
+      <div className="space-y-3">
+        {driveUrl && (
+          <button
+            type="button"
+            onClick={handleGuideClick}
+            className={`flex w-full items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition ${
+              guideRead
+                ? "border-green-200 bg-green-50 text-green-700"
+                : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+            }`}
+          >
+            <BookOpen className="h-4 w-4 shrink-0" />
+            <span className="flex-1 text-left">
+              {guideRead ? "✓ 拍攝指南已確認" : "📌 查看拍攝指南（提交後記前必看）"}
+            </span>
+          </button>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/campaigns/${campaignId}`}>
+            <Button variant="outline" size="sm" className="gap-2">
+              <ExternalLink className="h-4 w-4" />
+              查看活動
+            </Button>
+          </Link>
+          {!driveUrl || guideRead ? (
+            <Link href="/mypage/reviews">
+              <Button size="sm" className="gap-2">
+                <FileText className="h-4 w-4" />
+                提交後記
+              </Button>
+            </Link>
+          ) : (
+            <Button size="sm" disabled className="gap-2">
+              <FileText className="h-4 w-4" />
+              提交後記（請先確認指南）
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

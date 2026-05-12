@@ -24,7 +24,6 @@ import { toast } from "@/hooks/use-toast";
 import { KOREA_REGIONS } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
 import { Upload, X, ImageIcon } from "lucide-react";
-import { KoreaMap } from "@/components/ui/korea-map";
 import type { Campaign, Category } from "@/types/database";
 
 interface CampaignFormProps {
@@ -494,37 +493,22 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="region">
-                지역
-                {selectedRegion && (
-                  <span className="ml-2 text-xs font-normal text-primary">
-                    ({KOREA_REGIONS.find((r) => r.value === selectedRegion)?.label_ko || selectedRegion})
-                  </span>
-                )}
-              </Label>
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {[
-                  { value: "nationwide", label: "전국" },
-                  { value: "online", label: "온라인" },
-                ].map((r) => (
-                  <button
-                    key={r.value}
-                    type="button"
-                    onClick={() => setValue("region", r.value)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                      selectedRegion === r.value
-                        ? "bg-primary text-white"
-                        : "border border-gray-200 text-gray-600 hover:border-primary hover:text-primary"
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-              <KoreaMap
-                selected={selectedRegion || ""}
-                onSelect={(v) => setValue("region", v)}
-              />
+              <Label htmlFor="region">지역</Label>
+              <Select
+                value={selectedRegion || ""}
+                onValueChange={(value) => setValue("region", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="지역 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {KOREA_REGIONS.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label_ko}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

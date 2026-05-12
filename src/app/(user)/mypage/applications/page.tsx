@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
-import { ArrowLeft, ExternalLink, FolderOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { ApplicationStepActions } from "./application-step-actions";
 import type { ApplicationStatus } from "@/types/database";
 
@@ -74,7 +74,12 @@ export default async function MyApplicationsPage() {
 
       {applications && applications.length > 0 ? (
         <div className="space-y-4">
-          {applications.map((application) => {
+          {[...applications]
+            .sort((a, b) => {
+              const priority = (s: string) => (s === "approved" || s === "scheduled" ? 0 : 1);
+              return priority(a.status) - priority(b.status);
+            })
+            .map((application) => {
             const campaign = application.campaigns as unknown as {
               id: string;
               title_zh_tw: string | null;
@@ -102,9 +107,19 @@ export default async function MyApplicationsPage() {
 
             const status = application.status as ApplicationStatus;
             const config = STATUS_CONFIG[status] ?? { label: status, variant: "secondary" as const };
+            const isActionRequired = status === "approved" || status === "scheduled";
 
             return (
               <Card key={application.id}>
+                {isActionRequired && (
+                  <div className="flex items-center gap-2 rounded-t-lg bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs font-semibold text-amber-700">
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                    </span>
+                    需要您的操作
+                  </div>
+                )}
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -166,20 +181,6 @@ export default async function MyApplicationsPage() {
                     </div>
                   )}
 
-                  {/* 구글 드라이브 링크 (예약 확정 이후에만 표시) */}
-                  {(status === "visit_confirmed" || status === "completed") && campaign.drive_url && (
-                    <a
-                      href={campaign.drive_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
-                    >
-                      <FolderOpen className="h-4 w-4 shrink-0" />
-                      <span>查看拍攝指南 / 注意事項（Google Drive）</span>
-                      <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
-                    </a>
-                  )}
-
                   {/* 단계별 액션 버튼 */}
                   <ApplicationStepActions
                     applicationId={application.id}
@@ -189,6 +190,7 @@ export default async function MyApplicationsPage() {
                     userName={profile?.name ?? undefined}
                     userLineId={profile?.line_id ?? undefined}
                     serviceOptions={serviceOptions}
+                    driveUrl={campaign.drive_url ?? undefined}
                   />
 
                   {application.admin_note && (
