@@ -182,7 +182,7 @@ export default function CampaignsPage() {
     setPage(0);
     setHasMore(true);
     fetchCampaigns(0, false);
-  }, [selectedCategory, selectedRegion, selectedPlatform, searchQuery, sortBy]);
+  }, [selectedCategory, selectedRegion, selectedPlatform, selectedCampaignType, searchQuery, sortBy]);
 
   // Infinite scroll
   useEffect(() => {
@@ -211,11 +211,12 @@ export default function CampaignsPage() {
     if (selectedCategory && selectedCategory !== "all") params.set("category", selectedCategory);
     if (selectedRegion && selectedRegion !== "all") params.set("region", selectedRegion);
     if (selectedPlatform && selectedPlatform !== "all") params.set("platform", selectedPlatform);
+    if (selectedCampaignType !== "all") params.set("type", selectedCampaignType);
     if (sortBy !== "popular") params.set("sort", sortBy);
-    
+
     const newUrl = params.toString() ? `?${params.toString()}` : "/campaigns";
     router.replace(newUrl, { scroll: false });
-  }, [searchQuery, selectedCategory, selectedRegion, selectedPlatform, sortBy]);
+  }, [searchQuery, selectedCategory, selectedRegion, selectedPlatform, selectedCampaignType, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery("");
