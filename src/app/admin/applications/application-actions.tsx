@@ -81,14 +81,16 @@ export function ApplicationActions({
 
   const handleDelete = async () => {
     setIsLoading(true);
-    const { error } = await supabase.from("applications").delete().eq("id", applicationId);
-    if (error) {
-      toast({ title: "삭제 실패", description: error.message, variant: "destructive" });
+    const res = await fetch(`/api/admin/applications/${applicationId}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast({ title: "삭제 실패", description: data.error ?? "서버 오류", variant: "destructive" });
       setIsLoading(false);
       return;
     }
-    toast({ title: "신청 삭제 완료" });
+    toast({ title: "신청 삭제 완료", description: "사용자도 해당 캠페인에 재신청할 수 있습니다." });
     setIsLoading(false);
+    setShowDeleteConfirm(false);
     onStatusChange?.();
   };
 
