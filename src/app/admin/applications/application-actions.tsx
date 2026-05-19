@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
-import { Check, X, Calendar, ClipboardCheck, Trophy } from "lucide-react";
+import { Check, X, Calendar, ClipboardCheck, Trophy, Trash2 } from "lucide-react";
 import type { ApplicationStatus } from "@/types/database";
 
 interface ScheduleProposal {
@@ -35,6 +35,7 @@ export function ApplicationActions({
   const [isLoading, setIsLoading] = useState(false);
   const [adminNote, setAdminNote] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const supabase = createClient();
 
@@ -78,6 +79,19 @@ export function ApplicationActions({
     onStatusChange?.();
   };
 
+  const handleDelete = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.from("applications").delete().eq("id", applicationId);
+    if (error) {
+      toast({ title: "삭제 실패", description: error.message, variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
+    toast({ title: "신청 삭제 완료" });
+    setIsLoading(false);
+    onStatusChange?.();
+  };
+
   const confirmSchedule = async () => {
     if (!selectedDate) {
       toast({ title: "날짜와 시간을 입력해주세요", variant: "destructive" });
@@ -87,6 +101,45 @@ export function ApplicationActions({
     const formatted = selectedDate.replace("T", " ");
     await updateStatus("scheduled", { confirmed_date: formatted });
   };
+
+  const deleteButton = (
+    <div className="mt-3 border-t pt-3">
+      {showDeleteConfirm ? (
+        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2">
+          <p className="flex-1 text-sm text-red-700">정말 이 신청건을 삭제하시겠습니까?</p>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isLoading}
+            className="gap-1 h-7 px-2.5 text-xs"
+          >
+            {isLoading ? <LoadingSpinner size="sm" /> : <Trash2 className="h-3 w-3" />}
+            삭제
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowDeleteConfirm(false)}
+            disabled={isLoading}
+            className="h-7 px-2.5 text-xs"
+          >
+            취소
+          </Button>
+        </div>
+      ) : (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="gap-1.5 text-xs text-gray-400 hover:text-red-500 hover:bg-red-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          신청 삭제
+        </Button>
+      )}
+    </div>
+  );
 
   // 1단계: pending → 승인/반려
   if (status === "pending") {
@@ -111,6 +164,7 @@ export function ApplicationActions({
             반려
           </Button>
         </div>
+        {deleteButton}
       </div>
     );
   }
@@ -123,7 +177,6 @@ export function ApplicationActions({
           <Calendar className="mr-1 inline h-4 w-4" />
           일정 확정 (날짜·시간 직접 입력)
         </p>
-        {/* 유저가 제안한 날짜 참고 표시 */}
         <div className="rounded bg-blue-100 px-3 py-2">
           <p className="mb-1 text-xs font-medium text-blue-700">유저 제안 날짜</p>
           <div className="flex flex-wrap gap-1.5">
@@ -166,6 +219,7 @@ export function ApplicationActions({
             거절
           </Button>
         </div>
+        {deleteButton}
       </div>
     );
   }
@@ -197,6 +251,7 @@ export function ApplicationActions({
             거절
           </Button>
         </div>
+        {deleteButton}
       </div>
     );
   }
@@ -204,14 +259,22 @@ export function ApplicationActions({
   // 4단계: visit_confirmed → 완료 처리
   if (status === "visit_confirmed") {
     return (
-      <div className="flex gap-2">
-        <Button onClick={() => updateStatus("completed")} disabled={isLoading} variant="outline" className="gap-2">
-          {isLoading ? <LoadingSpinner size="sm" /> : <Trophy className="h-4 w-4" />}
-          완료 처리
-        </Button>
+      <div className="rounded-md border bg-muted/30 p-4">
+        <div className="flex gap-2">
+          <Button onClick={() => updateStatus("completed")} disabled={isLoading} variant="outline" className="gap-2">
+            {isLoading ? <LoadingSpinner size="sm" /> : <Trophy className="h-4 w-4" />}
+            완료 처리
+          </Button>
+        </div>
+        {deleteButton}
       </div>
     );
   }
 
-  return null;
+  // approved / scheduled / completed / rejected → 상태 변경 액션 없음, 삭제만 가능
+  return (
+    <div className="rounded-md border bg-muted/10 p-3">
+      {deleteButton}
+    </div>
+  );
 }
