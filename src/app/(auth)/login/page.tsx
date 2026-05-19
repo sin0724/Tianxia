@@ -32,15 +32,15 @@ function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    const supabase = createClient();
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
 
-    if (error) {
-      setError("電子郵件或密碼錯誤");
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "電子郵件或密碼錯誤");
       setIsLoading(false);
       return;
     }
