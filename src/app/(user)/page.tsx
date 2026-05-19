@@ -56,7 +56,6 @@ export default function HomePage() {
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortBy, setSortBy] = useState<"popular" | "latest">("latest");
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -114,7 +113,7 @@ export default function HomePage() {
     return cat?.id || null;
   }, [categories]);
 
-  const filteredCampaigns = useMemo(() => {
+  const campaignsByCategory = useMemo(() => {
     let filtered = [...allCampaigns];
 
     if (selectedRegion !== "all") {
@@ -133,22 +132,24 @@ export default function HomePage() {
       filtered = filtered.filter((c) => c.category === selectedCategory);
     }
 
-    if (sortBy === "latest") {
-      filtered.sort(
-        (a, b) =>
-          new Date((b as any).created_at).getTime() -
-          new Date((a as any).created_at).getTime()
-      );
-    } else {
-      filtered.sort((a, b) => {
-        const aTotal = a.application_count + (a.bonus_application_count || 0);
-        const bTotal = b.application_count + (b.bonus_application_count || 0);
-        return bTotal - aTotal;
-      });
-    }
+    filtered.sort(
+      (a, b) =>
+        new Date((b as any).created_at).getTime() -
+        new Date((a as any).created_at).getTime()
+    );
 
-    return filtered.slice(0, 6);
-  }, [allCampaigns, selectedRegion, selectedType, selectedCategory, deliveryCategoryId, sortBy]);
+    const groups: Record<string, CampaignWithCount[]> = {};
+    for (const campaign of filtered) {
+      if (!groups[campaign.category]) groups[campaign.category] = [];
+      groups[campaign.category].push(campaign);
+    }
+    return groups;
+  }, [allCampaigns, selectedRegion, selectedType, selectedCategory, deliveryCategoryId]);
+
+  const visibleCategories = useMemo(
+    () => categories.filter((cat) => (campaignsByCategory[cat.id]?.length ?? 0) > 0),
+    [categories, campaignsByCategory]
+  );
 
   const premiumCampaigns = useMemo(
     () => allCampaigns.filter((c) => c.campaign_type === "paid").slice(0, 4),
@@ -455,58 +456,46 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Campaign List Section */}
-      <section className="py-8 md:py-12">
-        <div className="container mx-auto px-4">
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-1 rounded-full bg-white border border-gray-100 p-1 shadow-sm">
-              <button
-                onClick={() => setSortBy("popular")}
-                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
-                  sortBy === "popular"
-                    ? "bg-gray-900 text-white shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                人氣活動
-              </button>
-              <button
-                onClick={() => setSortBy("latest")}
-                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
-                  sortBy === "latest"
-                    ? "bg-gray-900 text-white shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                最新活動
-              </button>
-            </div>
-            <Link href="/campaigns">
-              <Button variant="ghost" className="gap-1.5 text-sm text-gray-400 hover:text-primary px-3">
-                查看全部
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-
-          {filteredCampaigns.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredCampaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign as any}
-                  categories={categories}
-                />
-              ))}
-            </div>
-          ) : (
+      {/* Category Horizontal Scroll Sections */}
+      <div className="py-4 md:py-6 space-y-8">
+        {visibleCategories.length > 0 ? (
+          visibleCategories.map((category) => (
+            <section key={category.id}>
+              <div className="container mx-auto px-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-gray-900 md:text-lg">
+                    <span className="text-xl">{category.icon}</span>
+                    <span>{category.name_zh}</span>
+                    <span className="text-sm font-normal text-gray-400">
+                      ({campaignsByCategory[category.id].length})
+                    </span>
+                  </h2>
+                  <Link href={`/campaigns?category=${category.id}`}>
+                    <button className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-primary">
+                      更多
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </Link>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4">
+                  {campaignsByCategory[category.id].slice(0, 8).map((campaign) => (
+                    <div key={campaign.id} className="w-60 shrink-0 md:w-72">
+                      <CampaignCard campaign={campaign as any} categories={categories} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ))
+        ) : (
+          <div className="container mx-auto px-4">
             <div className="rounded-2xl border border-gray-100 bg-white py-16 text-center shadow-sm">
               <p className="mb-1 text-base font-semibold text-gray-900">找不到相關活動</p>
               <p className="text-sm text-gray-400">請嘗試其他篩選條件</p>
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
