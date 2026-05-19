@@ -12,6 +12,7 @@ import {
   Star,
   Tag,
   Image as ImageIcon,
+  ExternalLink,
 } from "lucide-react";
 
 const menuItems = [
@@ -71,7 +72,7 @@ export function AdminSidebar() {
           </span>
         </Link>
       </div>
-      <nav className="p-4">
+      <nav className="flex h-[calc(100vh-4rem)] flex-col p-4">
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const isActive =
@@ -96,6 +97,16 @@ export function AdminSidebar() {
             );
           })}
         </ul>
+        <div className="mt-auto border-t pt-4">
+          <Link
+            href="/"
+            target="_blank"
+            className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+          >
+            <ExternalLink className="h-4 w-4" />
+            메인 홈페이지
+          </Link>
+        </div>
       </nav>
     </aside>
   );
