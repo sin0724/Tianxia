@@ -16,7 +16,9 @@ export async function GET(
     .eq("status", "active")
     .single();
 
-  const destination = new URL("/campaigns", request.url);
+  const destination = request.nextUrl.clone();
+  destination.pathname = "/campaigns";
+  destination.search = "";
   const response = NextResponse.redirect(destination);
 
   if (hotel) {
