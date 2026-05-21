@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import CampaignsClient from "./campaigns-client";
 import { CampaignCardSkeleton } from "@/components/user/campaign-card-skeleton";
+import { HotelRefTracker } from "@/components/shared/hotel-ref-tracker";
 
 export const metadata: Metadata = {
   title: "韓國體驗團活動列表 | 天下 Tianxia",
@@ -36,8 +37,13 @@ function LoadingFallback() {
 
 export default function CampaignsPage() {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <CampaignsClient />
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <HotelRefTracker />
+      </Suspense>
+      <Suspense fallback={<LoadingFallback />}>
+        <CampaignsClient />
+      </Suspense>
+    </>
   );
 }

@@ -22,14 +22,18 @@ export async function GET(
   const host = forwardedHost ?? request.headers.get("host") ?? "";
   const baseUrl = host ? `${forwardedProto}://${host}` : new URL(request.url).origin;
 
-  const response = NextResponse.redirect(`${baseUrl}/campaigns`);
+  const campaignsUrl = hotel
+    ? `${baseUrl}/campaigns?ref=${encodeURIComponent(hotel.partner_code)}&rid=${encodeURIComponent(hotel.id)}`
+    : `${baseUrl}/campaigns`;
+
+  const response = NextResponse.redirect(campaignsUrl);
 
   if (hotel) {
     const cookieOpts = {
-      maxAge: 60 * 60 * 24 * 30, // 30일
+      maxAge: 60 * 60 * 24 * 30,
       path: "/",
       sameSite: "lax" as const,
-      httpOnly: false, // 클라이언트에서 읽을 수 있어야 함
+      httpOnly: false,
     };
     response.cookies.set("_hc", hotel.partner_code, cookieOpts);
     response.cookies.set("_hid", hotel.id, cookieOpts);

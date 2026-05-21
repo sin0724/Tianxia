@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -31,27 +32,28 @@ export async function GET(request: NextRequest) {
         .update({ name, email: data.user.email ?? "" })
         .eq("id", data.user.id);
 
-      // QR 유입 쿠키가 있고 아직 호텔 유입 기록이 없으면 처리
+      // QR 유입 쿠키가 있고 아직 호텔 유입 기록이 없으면 처리 (admin client로 RLS 우회)
       const hotelCode = request.cookies.get("_hc")?.value;
       const hotelPartnerId = request.cookies.get("_hid")?.value;
       if (hotelCode && hotelPartnerId) {
-        // first_hotel_partner_id가 없는 유저에게만 기록 (중복 방지)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: profile } = await (supabase.from("profiles") as any)
+        const admin = createAdminClient();
+        const { data: profile } = await admin
+          .from("profiles")
           .select("first_hotel_partner_id")
           .eq("id", data.user.id)
           .single();
 
         if (!profile?.first_hotel_partner_id) {
           await Promise.all([
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (supabase.from("profiles") as any).update({
-              first_hotel_partner_id: hotelPartnerId,
-              first_hotel_code: hotelCode,
-              referred_at: new Date().toISOString(),
-            }).eq("id", data.user.id),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (supabase.from("hotel_referrals") as any).insert({
+            admin
+              .from("profiles")
+              .update({
+                first_hotel_partner_id: hotelPartnerId,
+                first_hotel_code: hotelCode,
+                referred_at: new Date().toISOString(),
+              })
+              .eq("id", data.user.id),
+            admin.from("hotel_referrals").insert({
               hotel_partner_id: hotelPartnerId,
               hotel_code: hotelCode,
               user_id: data.user.id,

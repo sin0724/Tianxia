@@ -6,11 +6,21 @@ export interface HotelCookieData {
 }
 
 export function getHotelCookie(): HotelCookieData {
-  if (typeof document === "undefined") {
+  if (typeof window === "undefined") {
     return { hotelCode: null, hotelPartnerId: null };
   }
 
-  const parse = (name: string): string | null => {
+  // sessionStorage is the primary source (set from URL params by HotelRefTracker)
+  // cookies are the fallback
+  const fromStorage = (key: string): string | null => {
+    try {
+      return sessionStorage.getItem(key) || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const fromCookie = (name: string): string | null => {
     const match = document.cookie.match(
       new RegExp("(?:^|; )" + name + "=([^;]*)")
     );
@@ -18,13 +28,17 @@ export function getHotelCookie(): HotelCookieData {
   };
 
   return {
-    hotelCode: parse("_hc"),
-    hotelPartnerId: parse("_hid"),
+    hotelCode: fromStorage("_hc") ?? fromCookie("_hc"),
+    hotelPartnerId: fromStorage("_hid") ?? fromCookie("_hid"),
   };
 }
 
 export function clearHotelCookie(): void {
-  if (typeof document === "undefined") return;
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem("_hc");
+    sessionStorage.removeItem("_hid");
+  } catch { /* ignore */ }
   const expired = "expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
   document.cookie = `_hc=; ${expired}`;
   document.cookie = `_hid=; ${expired}`;

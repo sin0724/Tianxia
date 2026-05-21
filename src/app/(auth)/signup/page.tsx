@@ -108,27 +108,21 @@ function SignupForm() {
       return;
     }
 
-    // 호텔 QR 유입 정보 연결 (쿠키에 있을 때만)
+    // 호텔 QR 유입 정보 연결 - 서버 API를 통해 service role로 처리 (RLS 우회)
     const { hotelCode, hotelPartnerId } = getHotelCookie();
-    if (hotelCode && hotelPartnerId && authData.user) {
-      const [profileUpdateResult, referralResult] = await Promise.all([
-        (supabase.from("profiles") as any).update({
-          first_hotel_partner_id: hotelPartnerId,
-          first_hotel_code: hotelCode,
-          referred_at: new Date().toISOString(),
-        }).eq("id", authData.user.id),
-        (supabase.from("hotel_referrals") as any).insert({
-          hotel_partner_id: hotelPartnerId,
-          hotel_code: hotelCode,
-          user_id: authData.user.id,
-        }),
-      ]);
-      // 실패해도 가입 자체는 완료 - 단, RLS 오류 가능성 있음 (migration 024 필요)
-      if (referralResult.error) {
-        console.error("[hotel referral] insert failed:", referralResult.error.message);
-      }
-      if (profileUpdateResult.error) {
-        console.error("[hotel referral] profile update failed:", profileUpdateResult.error.message);
+    if (hotelCode && hotelPartnerId) {
+      try {
+        await fetch("/api/hotel-referral", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: authData.user.id,
+            hotelCode,
+            hotelPartnerId,
+          }),
+        });
+      } catch {
+        // 가입 자체는 성공 - 유입 기록 실패는 무시
       }
     }
 
