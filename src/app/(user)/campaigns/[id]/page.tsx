@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: CampaignDetailPageProps) {
   const supabase = await createClient();
   const { data: campaign } = await supabase
     .from("campaigns")
-    .select("title_zh_tw, title_ko, summary_zh_tw, summary_ko")
+    .select("title_zh_tw, title_ko, summary_zh_tw, summary_ko, thumbnail_url, brand_name_zh_tw, brand_name_ko")
     .eq("id", id)
     .single();
 
@@ -28,9 +28,33 @@ export async function generateMetadata({ params }: CampaignDetailPageProps) {
     return { title: "活動不存在 | 天下 Tianxia" };
   }
 
+  const title = campaign.title_zh_tw || campaign.title_ko;
+  const brandName = campaign.brand_name_zh_tw || campaign.brand_name_ko;
+  const description = campaign.summary_zh_tw || campaign.summary_ko
+    || `${brandName} 韓國體驗團活動 — 免費體驗並在 Instagram 分享打卡心得`;
+  const thumbnailUrl = campaign.thumbnail_url;
+
   return {
-    title: `${campaign.title_zh_tw || campaign.title_ko} | 天下 Tianxia`,
-    description: campaign.summary_zh_tw || campaign.summary_ko,
+    title: `${title} | 天下 Tianxia`,
+    description,
+    keywords: [title, brandName, "韓國體驗團", "免費體驗", "網紅合作", "KOL", "Instagram打卡", "首爾"],
+    alternates: {
+      canonical: `/campaigns/${id}`,
+    },
+    openGraph: {
+      title: `${title} | 天下 Tianxia`,
+      description,
+      type: "article",
+      ...(thumbnailUrl && {
+        images: [{ url: thumbnailUrl, width: 1200, height: 630, alt: title }],
+      }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | 天下 Tianxia`,
+      description,
+      ...(thumbnailUrl && { images: [thumbnailUrl] }),
+    },
   };
 }
 
@@ -115,7 +139,49 @@ export default async function CampaignDetailPage({
   const requirements = campaign.requirements_zh_tw || campaign.requirements_ko;
   const precautions = campaign.precautions_zh_tw || campaign.precautions_ko;
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const campaignJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: title,
+    description: summary || description,
+    image: campaign.thumbnail_url || undefined,
+    url: `${siteUrl}/campaigns/${campaign.id}`,
+    organizer: {
+      "@type": "Organization",
+      name: brandName,
+    },
+    location: {
+      "@type": "Place",
+      name: getRegionLabel(campaign.region),
+      address: {
+        "@type": "PostalAddress",
+        addressCountry: "KR",
+      },
+    },
+    startDate: campaign.experience_date,
+    endDate: campaign.review_deadline,
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    offers: {
+      "@type": "Offer",
+      price: isPremium ? (paymentAmount ?? 0) : 0,
+      priceCurrency: isPremium ? "TWD" : "TWD",
+      availability: isDeadlinePassed
+        ? "https://schema.org/SoldOut"
+        : "https://schema.org/InStock",
+      validThrough: campaign.application_deadline,
+      url: `${siteUrl}/campaigns/${campaign.id}`,
+    },
+    inLanguage: "zh-TW",
+  };
+
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(campaignJsonLd) }}
+      />
     <div className="container mx-auto px-4 py-8 pb-24 lg:pb-8">
       {/* 모바일 고정 하단 CTA */}
       <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-100 bg-white/95 backdrop-blur-sm px-4 py-3 lg:hidden">
@@ -444,5 +510,6 @@ export default async function CampaignDetailPage({
         </div>
       </div>
     </div>
+    </>
   );
 }
