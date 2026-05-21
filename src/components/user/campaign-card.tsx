@@ -9,6 +9,7 @@ import type { Campaign, Category } from "@/types/database";
 interface CampaignCardProps {
   campaign: Campaign & { application_count?: number };
   categories?: Category[];
+  hotelQuery?: string;
 }
 
 function PlatformIcon({ platform, size = "sm" }: { platform: string; size?: "sm" | "md" }) {
@@ -85,7 +86,7 @@ function getStatusBadge(percentage: number, remaining: number) {
   return null;
 }
 
-export function CampaignCard({ campaign, categories }: CampaignCardProps) {
+export function CampaignCard({ campaign, categories, hotelQuery = "" }: CampaignCardProps) {
   const daysRemaining = getDaysRemaining(campaign.application_deadline);
   const category = categories?.find((c) => c.id === campaign.category);
   const categoryLabel = category ? category.name_zh : "";
@@ -125,7 +126,7 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
   }
 
   return (
-    <Link href={`/campaigns/${campaign.id}`}>
+    <Link href={`/campaigns/${campaign.id}${hotelQuery}`}>
       <div className={`group overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 ${
         isPremium
           ? "border-yellow-300 shadow-yellow-100/60 hover:shadow-yellow-200/70"

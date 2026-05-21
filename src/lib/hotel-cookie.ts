@@ -10,11 +10,11 @@ export function getHotelCookie(): HotelCookieData {
     return { hotelCode: null, hotelPartnerId: null };
   }
 
-  // sessionStorage is the primary source (set from URL params by HotelRefTracker)
-  // cookies are the fallback
+  // localStorage is the primary source (persists across sessions)
+  // sessionStorage and cookies are fallbacks
   const fromStorage = (key: string): string | null => {
     try {
-      return sessionStorage.getItem(key) || null;
+      return localStorage.getItem(key) || sessionStorage.getItem(key) || null;
     } catch {
       return null;
     }
@@ -36,6 +36,8 @@ export function getHotelCookie(): HotelCookieData {
 export function clearHotelCookie(): void {
   if (typeof window === "undefined") return;
   try {
+    localStorage.removeItem("_hc");
+    localStorage.removeItem("_hid");
     sessionStorage.removeItem("_hc");
     sessionStorage.removeItem("_hid");
   } catch { /* ignore */ }

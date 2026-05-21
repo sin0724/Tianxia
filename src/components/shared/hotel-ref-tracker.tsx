@@ -11,10 +11,10 @@ export function HotelRefTracker() {
     const rid = searchParams.get("rid");
     if (ref && rid) {
       try {
-        sessionStorage.setItem("_hc", ref);
-        sessionStorage.setItem("_hid", rid);
+        localStorage.setItem("_hc", ref);
+        localStorage.setItem("_hid", rid);
       } catch {
-        // sessionStorage unavailable (private browsing edge case)
+        // storage unavailable (private browsing edge case)
       }
     }
   }, [searchParams]);

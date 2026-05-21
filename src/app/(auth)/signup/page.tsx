@@ -18,6 +18,8 @@ function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
+  const urlRef = searchParams.get("ref") || "";
+  const urlRid = searchParams.get("rid") || "";
   const [isLoading, setIsLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -108,8 +110,10 @@ function SignupForm() {
       return;
     }
 
-    // 호텔 QR 유입 정보 연결 - 서버 API를 통해 service role로 처리 (RLS 우회)
-    const { hotelCode, hotelPartnerId } = getHotelCookie();
+    // 호텔 QR 유입 정보 연결 - URL 파라미터 우선, localStorage/쿠키 폴백
+    const cookie = getHotelCookie();
+    const hotelCode = urlRef || cookie.hotelCode;
+    const hotelPartnerId = urlRid || cookie.hotelPartnerId;
     if (hotelCode && hotelPartnerId) {
       try {
         await fetch("/api/hotel-referral", {
