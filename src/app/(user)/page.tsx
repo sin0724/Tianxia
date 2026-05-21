@@ -57,6 +57,7 @@ export default function HomePage() {
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
 
   const supabase = createBrowserClient(
@@ -170,10 +171,20 @@ export default function HomePage() {
 
   const displayCategories = showAllCategories ? categories : featuredCategories;
 
-  // 북마크 로드
+  // 로그인 유저 확인 + 북마크 로드
   useEffect(() => {
-    setBookmarkedIds(getBookmarks());
-    const handler = () => setBookmarkedIds(getBookmarks());
+    supabase.auth.getUser().then(({ data }) => {
+      const uid = data.user?.id ?? null;
+      setCurrentUserId(uid);
+      setBookmarkedIds(getBookmarks(uid));
+    });
+
+    const handler = () => {
+      supabase.auth.getUser().then(({ data }) => {
+        const uid = data.user?.id ?? null;
+        setBookmarkedIds(getBookmarks(uid));
+      });
+    };
     window.addEventListener("bookmarks-changed", handler);
     return () => window.removeEventListener("bookmarks-changed", handler);
   }, []);

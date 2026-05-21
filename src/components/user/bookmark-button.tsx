@@ -1,21 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
-const BOOKMARK_KEY = "bookmarked_campaigns";
+function bookmarkKey(userId: string) {
+  return `bookmarks_${userId}`;
+}
 
-export function getBookmarks(): string[] {
-  if (typeof window === "undefined") return [];
+export function getBookmarks(userId: string | null): string[] {
+  if (typeof window === "undefined" || !userId) return [];
   try {
-    return JSON.parse(localStorage.getItem(BOOKMARK_KEY) || "[]");
+    return JSON.parse(localStorage.getItem(bookmarkKey(userId)) || "[]");
   } catch {
     return [];
   }
 }
 
-function setBookmarks(ids: string[]) {
-  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(ids));
+function saveBookmarks(userId: string, ids: string[]) {
+  localStorage.setItem(bookmarkKey(userId), JSON.stringify(ids));
   window.dispatchEvent(new Event("bookmarks-changed"));
 }
 
@@ -25,12 +29,24 @@ interface BookmarkButtonProps {
 }
 
 export function BookmarkButton({ campaignId, className = "" }: BookmarkButtonProps) {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
-    setIsBookmarked(getBookmarks().includes(campaignId));
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      const uid = data.user?.id ?? null;
+      setUserId(uid);
+      setIsBookmarked(getBookmarks(uid).includes(campaignId));
+    });
 
-    const handler = () => setIsBookmarked(getBookmarks().includes(campaignId));
+    const handler = () => {
+      supabase.auth.getUser().then(({ data }) => {
+        const uid = data.user?.id ?? null;
+        setIsBookmarked(getBookmarks(uid).includes(campaignId));
+      });
+    };
     window.addEventListener("bookmarks-changed", handler);
     return () => window.removeEventListener("bookmarks-changed", handler);
   }, [campaignId]);
@@ -38,12 +54,18 @@ export function BookmarkButton({ campaignId, className = "" }: BookmarkButtonPro
   const toggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const current = getBookmarks();
+
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    const current = getBookmarks(userId);
     const next = current.includes(campaignId)
       ? current.filter((id) => id !== campaignId)
       : [...current, campaignId];
-    setBookmarks(next);
-    setIsBookmarked(!current.includes(campaignId));
+    saveBookmarks(userId, next);
+    setIsBookmarked(next.includes(campaignId));
   };
 
   return (
