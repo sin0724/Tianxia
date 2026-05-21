@@ -374,6 +374,146 @@ export type Database = {
           status?: "pending" | "submitted" | "approved";
         };
       };
+      hotel_partners: {
+        Row: {
+          id: string;
+          name: string;
+          name_en: string | null;
+          address: string | null;
+          region: string | null;
+          contact_name: string | null;
+          contact_phone: string | null;
+          contact_email: string | null;
+          partner_code: string;
+          incentive_per_completion: number;
+          status: "active" | "inactive" | "pending";
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          name_en?: string | null;
+          address?: string | null;
+          region?: string | null;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          contact_email?: string | null;
+          partner_code: string;
+          incentive_per_completion?: number;
+          status?: "active" | "inactive" | "pending";
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          name_en?: string | null;
+          address?: string | null;
+          region?: string | null;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          contact_email?: string | null;
+          partner_code?: string;
+          incentive_per_completion?: number;
+          status?: "active" | "inactive" | "pending";
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      hotel_referrals: {
+        Row: {
+          id: string;
+          hotel_partner_id: string;
+          hotel_code: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          hotel_partner_id: string;
+          hotel_code: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          hotel_partner_id?: string;
+          hotel_code?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+      };
+      hotel_settlements: {
+        Row: {
+          id: string;
+          hotel_partner_id: string;
+          settlement_month: string;
+          completed_count: number;
+          incentive_per_count: number;
+          total_amount: number;
+          status: "pending" | "processing" | "completed" | "on_hold";
+          paid_at: string | null;
+          memo: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          hotel_partner_id: string;
+          settlement_month: string;
+          completed_count: number;
+          incentive_per_count: number;
+          total_amount: number;
+          status?: "pending" | "processing" | "completed" | "on_hold";
+          paid_at?: string | null;
+          memo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          hotel_partner_id?: string;
+          settlement_month?: string;
+          completed_count?: number;
+          incentive_per_count?: number;
+          total_amount?: number;
+          status?: "pending" | "processing" | "completed" | "on_hold";
+          paid_at?: string | null;
+          memo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      hotel_settlement_items: {
+        Row: {
+          id: string;
+          settlement_id: string;
+          application_id: string;
+          hotel_partner_id: string;
+          amount: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          settlement_id: string;
+          application_id: string;
+          hotel_partner_id: string;
+          amount?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          settlement_id?: string;
+          application_id?: string;
+          hotel_partner_id?: string;
+          amount?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

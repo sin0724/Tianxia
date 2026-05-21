@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Megaphone, FileText, Users, Star } from "lucide-react";
+import { Megaphone, FileText, Users, Star, Hotel } from "lucide-react";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
+
+  const thisMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
 
   const [
     { count: campaignCount },
@@ -12,23 +15,32 @@ export default async function AdminDashboardPage() {
     { count: pendingApplicationCount },
     { count: userCount },
     { count: reviewCount },
+    { count: activeHotelCount },
+    { count: hotelReferralCount },
+    { count: hotelApplicationCount },
+    { count: hotelCompletedCount },
+    { data: pendingSettlements },
   ] = await Promise.all([
     supabase.from("campaigns").select("*", { count: "exact", head: true }),
-    supabase
-      .from("campaigns")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active"),
+    supabase.from("campaigns").select("*", { count: "exact", head: true }).eq("status", "active"),
     supabase.from("applications").select("*", { count: "exact", head: true }),
-    supabase
-      .from("applications")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "pending"),
-    supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("role", "user"),
+    supabase.from("applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "user"),
     supabase.from("reviews").select("*", { count: "exact", head: true }),
+    supabase.from("hotel_partners").select("*", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("hotel_referrals").select("*", { count: "exact", head: true })
+      .gte("created_at", `${thisMonth}-01`),
+    supabase.from("applications").select("*", { count: "exact", head: true })
+      .not("hotel_partner_id", "is", null),
+    supabase.from("applications").select("*", { count: "exact", head: true })
+      .eq("is_settlement_target", true)
+      .is("settlement_id", null),
+    supabase.from("hotel_settlements").select("total_amount")
+      .neq("status", "completed"),
   ]);
+
+  const pendingSettlementAmount =
+    pendingSettlements?.reduce((sum, s) => sum + (s.total_amount ?? 0), 0) ?? 0;
 
   const { data: recentApplications } = await supabase
     .from("applications")
@@ -95,6 +107,53 @@ export default async function AdminDashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* 호텔 파트너 현황 */}
+      <div className="rounded-xl border border-blue-100 bg-blue-50 p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Hotel className="h-5 w-5 text-blue-600" />
+            <h2 className="font-semibold text-blue-900">호텔 파트너 현황</h2>
+          </div>
+          <Link
+            href="/admin/hotels"
+            className="text-xs text-blue-600 hover:underline"
+          >
+            관리 →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "활성 호텔", value: activeHotelCount ?? 0, unit: "개" },
+            { label: "이달 유입 회원", value: hotelReferralCount ?? 0, unit: "명" },
+            { label: "호텔 유입 신청", value: hotelApplicationCount ?? 0, unit: "건" },
+            {
+              label: "미정산 예정액",
+              value: pendingSettlementAmount.toLocaleString(),
+              unit: "원",
+            },
+          ].map((s) => (
+            <div key={s.label} className="rounded-lg bg-white p-3">
+              <p className="text-xs text-gray-400">{s.label}</p>
+              <p className="mt-0.5 text-xl font-bold text-gray-900">
+                {s.value}
+                <span className="ml-1 text-xs font-normal text-gray-400">
+                  {s.unit}
+                </span>
+              </p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-blue-500">
+          방문완료 {hotelCompletedCount ?? 0}건 · 정산 미처리 대기중
+          <Link
+            href="/admin/hotel-settlements"
+            className="ml-2 font-medium hover:underline"
+          >
+            정산 관리 →
+          </Link>
+        </p>
       </div>
 
       <Card className="border-0 bg-white shadow-sm">

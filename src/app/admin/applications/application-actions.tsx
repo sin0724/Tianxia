@@ -22,6 +22,7 @@ interface ApplicationActionsProps {
   status: ApplicationStatus;
   scheduleProposal: ScheduleProposal | null;
   isDelivery?: boolean;
+  hotelPartnerId?: string | null;
   onStatusChange?: () => void;
 }
 
@@ -30,6 +31,7 @@ export function ApplicationActions({
   status,
   scheduleProposal,
   isDelivery,
+  hotelPartnerId,
   onStatusChange,
 }: ApplicationActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -42,9 +44,25 @@ export function ApplicationActions({
   const updateStatus = async (newStatus: ApplicationStatus, extra?: Record<string, unknown>) => {
     setIsLoading(true);
 
+    // 방문완료 처리 시 정산 대상 자동 설정
+    const completionFields =
+      newStatus === "completed" && hotelPartnerId
+        ? {
+            visit_completed_at: new Date().toISOString(),
+            is_settlement_target: true,
+          }
+        : newStatus === "completed"
+        ? { visit_completed_at: new Date().toISOString() }
+        : {};
+
     const { error } = await supabase
       .from("applications")
-      .update({ status: newStatus, admin_note: adminNote || null, updated_at: new Date().toISOString() })
+      .update({
+        status: newStatus,
+        admin_note: adminNote || null,
+        updated_at: new Date().toISOString(),
+        ...completionFields,
+      })
       .eq("id", applicationId);
 
     if (error) {

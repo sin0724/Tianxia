@@ -14,6 +14,7 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
 import { CheckCircle, ClipboardList, Bell, ArrowRight } from "lucide-react";
 import type { Profile } from "@/types/database";
+import { getHotelCookie } from "@/lib/hotel-cookie";
 
 interface ApplicationFormProps {
   campaignId: string;
@@ -50,12 +51,18 @@ export function ApplicationForm({ campaignId, userProfile }: ApplicationFormProp
       return;
     }
 
+    // 호텔 QR 유입 정보 자동 연결 (사용자가 입력하지 않아도 됨)
+    const { hotelCode, hotelPartnerId } = getHotelCookie();
+
     const applicationData = {
       campaign_id: data.campaign_id,
       user_id: user.id,
       message: data.message || null,
       applied_instagram_url: data.applied_instagram_url,
       applied_threads_url: data.applied_threads_url || null,
+      ...(hotelCode && hotelPartnerId
+        ? { hotel_partner_id: hotelPartnerId, hotel_code: hotelCode }
+        : {}),
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

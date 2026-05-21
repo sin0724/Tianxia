@@ -12,6 +12,8 @@ import {
   Star,
   Tag,
   Image as ImageIcon,
+  Hotel,
+  Receipt,
   ExternalLink,
 } from "lucide-react";
 
@@ -50,6 +52,16 @@ const menuItems = [
     href: "/admin/reviews",
     label: "후기 관리",
     icon: Star,
+  },
+  {
+    href: "/admin/hotels",
+    label: "호텔 파트너",
+    icon: Hotel,
+  },
+  {
+    href: "/admin/hotel-settlements",
+    label: "호텔 정산",
+    icon: Receipt,
   },
 ];
 

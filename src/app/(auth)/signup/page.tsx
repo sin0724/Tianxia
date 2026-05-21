@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { getHotelCookie } from "@/lib/hotel-cookie";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -86,6 +87,25 @@ export default function SignupPage() {
       setError(`建立個人資料失敗: ${profileError.message}`);
       setIsLoading(false);
       return;
+    }
+
+    // 호텔 QR 유입 정보 연결 (쿠키에 있을 때만)
+    const { hotelCode, hotelPartnerId } = getHotelCookie();
+    if (hotelCode && hotelPartnerId && authData.user) {
+      await Promise.all([
+        // 프로필에 최초 유입 호텔 저장
+        (supabase.from("profiles") as any).update({
+          first_hotel_partner_id: hotelPartnerId,
+          first_hotel_code: hotelCode,
+          referred_at: new Date().toISOString(),
+        }).eq("id", authData.user.id),
+        // hotel_referrals 기록
+        (supabase.from("hotel_referrals") as any).insert({
+          hotel_partner_id: hotelPartnerId,
+          hotel_code: hotelCode,
+          user_id: authData.user.id,
+        }),
+      ]);
     }
 
     router.push("/");

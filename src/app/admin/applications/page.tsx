@@ -64,6 +64,9 @@ interface Application {
   schedule_proposals: ScheduleProposal | null;
   reservation_info: ReservationInfo | null;
   delivery_addresses: DeliveryAddress | null;
+  hotel_partner_id: string | null;
+  hotel_code: string | null;
+  is_settlement_target: boolean;
 }
 
 type StatusFilter = "all" | ApplicationStatus;
@@ -321,11 +324,21 @@ export default function AdminApplicationsPage() {
                     </div>
                   )}
 
+                  {application.hotel_code && (
+                    <div className="flex items-center gap-2 rounded-md bg-blue-50 px-3 py-1.5 text-xs text-blue-700">
+                      <span className="font-mono font-semibold">{application.hotel_code}</span>
+                      <span className="text-blue-400">호텔 유입</span>
+                      {application.is_settlement_target && (
+                        <span className="ml-1 rounded-full bg-green-100 px-1.5 py-0.5 text-xs text-green-700">정산대상</span>
+                      )}
+                    </div>
+                  )}
                   <ApplicationActions
                     applicationId={application.id}
                     status={application.status}
                     scheduleProposal={application.schedule_proposals}
                     isDelivery={application.campaigns?.is_delivery ?? false}
+                    hotelPartnerId={application.hotel_partner_id}
                     onStatusChange={fetchApplications}
                   />
 
