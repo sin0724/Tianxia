@@ -5,16 +5,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { createBrowserClient } from "@supabase/ssr";
 import { CampaignCard } from "@/components/user/campaign-card";
-import { ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sparkles, Crown } from "lucide-react";
+import { getBookmarks } from "@/components/user/bookmark-button";
+import { ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sparkles, Crown, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KOREA_REGIONS } from "@/constants/regions";
 import type { Category } from "@/types/database";
 
 const CAMPAIGN_TYPES = [
-  { value: "all", label_zh: "全部", icon: "📋", premium: false },
-  { value: "experience", label_zh: "體驗型", icon: "🎯", premium: false },
-  { value: "delivery", label_zh: "配送型", icon: "📦", premium: false },
-  { value: "premium", label_zh: "Premium", icon: "✦", premium: true },
+  { value: "all",        label_zh: "全部",       sublabel: null,         icon: "📋", premium: false },
+  { value: "experience", label_zh: "到店體驗",   sublabel: "親臨店面",   icon: "🏪", premium: false },
+  { value: "delivery",   label_zh: "宅配到府",   sublabel: "配送到家",   icon: "🚚", premium: false },
+  { value: "premium",    label_zh: "有薪合作",   sublabel: "額外合作費", icon: "⭐", premium: true },
 ] as const;
 
 const REGION_ALL = { value: "all", label_zh: "全部" } as const;
@@ -56,6 +57,7 @@ export default function HomePage() {
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -161,7 +163,20 @@ export default function HomePage() {
     [categories]
   );
 
+  const bookmarkedCampaigns = useMemo(
+    () => allCampaigns.filter((c) => bookmarkedIds.includes(c.id)),
+    [allCampaigns, bookmarkedIds]
+  );
+
   const displayCategories = showAllCategories ? categories : featuredCategories;
+
+  // 북마크 로드
+  useEffect(() => {
+    setBookmarkedIds(getBookmarks());
+    const handler = () => setBookmarkedIds(getBookmarks());
+    window.addEventListener("bookmarks-changed", handler);
+    return () => window.removeEventListener("bookmarks-changed", handler);
+  }, []);
 
   // 배너 자동 슬라이드
   useEffect(() => {
@@ -274,7 +289,7 @@ export default function HomePage() {
 
       {/* Filter Section */}
       <section className="border-b border-gray-100 bg-white shadow-sm">
-        {/* 캠페인 유형 (배송형/체험형) */}
+        {/* 캠페인 유형 */}
         <div className="border-b border-gray-100">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
@@ -285,14 +300,21 @@ export default function HomePage() {
                     <button
                       key={type.value}
                       onClick={() => setSelectedType(type.value)}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                      className={`flex shrink-0 flex-col items-center gap-0.5 rounded-2xl px-4 py-2 text-sm font-semibold transition-all ${
                         isSelected
                           ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-md shadow-amber-200"
                           : "border border-yellow-300 bg-gradient-to-r from-yellow-50 to-amber-50 text-amber-700 hover:from-yellow-100 hover:to-amber-100"
                       }`}
                     >
-                      <span className={isSelected ? "text-white" : "text-amber-500"}>{type.icon}</span>
-                      <span>{type.label_zh}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span>{type.icon}</span>
+                        <span>{type.label_zh}</span>
+                      </div>
+                      {type.sublabel && (
+                        <span className={`text-[10px] font-normal ${isSelected ? "text-yellow-100" : "text-amber-500/70"}`}>
+                          {type.sublabel}
+                        </span>
+                      )}
                     </button>
                   );
                 }
@@ -300,14 +322,21 @@ export default function HomePage() {
                   <button
                     key={type.value}
                     onClick={() => setSelectedType(type.value)}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                    className={`flex shrink-0 flex-col items-center gap-0.5 rounded-2xl px-4 py-2 text-sm font-medium transition-all ${
                       isSelected
                         ? "bg-primary text-white shadow-sm shadow-primary/20"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
-                    <span>{type.icon}</span>
-                    <span>{type.label_zh}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{type.icon}</span>
+                      <span>{type.label_zh}</span>
+                    </div>
+                    {type.sublabel && (
+                      <span className={`text-[10px] font-normal ${isSelected ? "text-white/70" : "text-gray-400"}`}>
+                        {type.sublabel}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -404,6 +433,34 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {/* 북마크(찜) 섹션 */}
+      {bookmarkedCampaigns.length > 0 && (
+        <section className="border-b border-gray-100 bg-white py-5">
+          <div className="container mx-auto px-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-base font-bold text-gray-900">
+                <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                <span>我的收藏</span>
+                <span className="text-sm font-normal text-gray-400">({bookmarkedCampaigns.length})</span>
+              </h2>
+              <Link href="/campaigns">
+                <button className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-primary">
+                  更多
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+              {bookmarkedCampaigns.map((campaign) => (
+                <div key={campaign.id} className="w-56 shrink-0 md:w-64">
+                  <CampaignCard campaign={campaign as any} categories={categories} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* PREMIUM 캠페인 섹션 */}
       {premiumCampaigns.length > 0 && (

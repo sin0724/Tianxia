@@ -5,9 +5,6 @@ export const applicationSchema = z.object({
   message: z.string().optional(),
   applied_instagram_url: z.string().url("請輸入有效的Instagram網址"),
   applied_threads_url: z.string().url("請輸入有效的網址").optional().or(z.literal("")),
-  applied_facebook_url: z.string().url("請輸入有效的網址").optional().or(z.literal("")),
-  applied_youtube_url: z.string().url("請輸入有效的網址").optional().or(z.literal("")),
-  applied_dcard_url: z.string().url("請輸入有效的網址").optional().or(z.literal("")),
 });
 
 export const reviewSchema = z.object({

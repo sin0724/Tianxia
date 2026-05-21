@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { formatDate, getDaysRemaining } from "@/lib/utils";
 import { getRegionLabel } from "@/constants/regions";
+import { BookmarkButton } from "@/components/user/bookmark-button";
 import type { Campaign, Category } from "@/types/database";
 
 interface CampaignCardProps {
@@ -172,6 +173,12 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
               ⭐ PREMIUM
             </div>
           )}
+
+          {/* 북마크 버튼 */}
+          <BookmarkButton
+            campaignId={campaign.id}
+            className="absolute bottom-3 right-3"
+          />
 
           {/* D-Day Badge */}
           {!isPremium && daysRemaining <= 3 && daysRemaining > 0 && (
