@@ -89,31 +89,21 @@ function SignupForm() {
     const instagramHandle =
       data.instagram_url.match(/instagram\.com\/?@?([^/?#]+)/)?.[1] ?? "";
 
-    const profileData = {
-      id: authData.user.id,
-      email: data.email,
-      name: data.name,
-      line_id: data.line_id || null,
-      instagram_handle: instagramHandle,
-      instagram_url: data.instagram_url,
-      threads_url: data.threads_url || null,
-      facebook_url: null,
-      youtube_url: null,
-      dcard_url: null,
-    };
-
+    // Migration 017 트리거가 auth.users 생성 시 profiles를 자동 생성하므로
+    // INSERT 대신 UPDATE로 가입 정보를 채워 넣음
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: profileError } = await (supabase.from("profiles") as any).insert(profileData);
+    const { error: profileError } = await (supabase.from("profiles") as any)
+      .update({
+        name: data.name,
+        line_id: data.line_id || null,
+        instagram_handle: instagramHandle,
+        instagram_url: data.instagram_url,
+        threads_url: data.threads_url || null,
+      })
+      .eq("id", authData.user.id);
 
     if (profileError) {
-      const isDuplicate =
-        profileError.code === "23505" ||
-        (profileError.message ?? "").includes("duplicate key");
-      if (isDuplicate) {
-        setError("此帳戶已存在，請直接登入。");
-      } else {
-        setError("建立帳戶時發生錯誤，請稍後再試。");
-      }
+      setError("建立帳戶時發生錯誤，請稍後再試。");
       setIsLoading(false);
       return;
     }

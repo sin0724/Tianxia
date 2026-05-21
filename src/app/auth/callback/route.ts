@@ -18,31 +18,31 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", data.user.id)
-        .single();
+      // Migration 017 트리거가 auth.users 생성 시 profiles를 자동 생성함
+      // 트리거가 만든 profile에 이름/이메일이 없으면 업데이트
+      const metadata = data.user.user_metadata ?? {};
+      const name =
+        metadata.full_name ||
+        metadata.name ||
+        (data.user.email ?? "").split("@")[0];
 
-      // 신규 가입자인 경우 프로필 생성 + 호텔 유입 처리
-      if (!existingProfile) {
-        const metadata = data.user.user_metadata ?? {};
-        const name =
-          metadata.full_name ||
-          metadata.name ||
-          (data.user.email ?? "").split("@")[0];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("profiles") as any)
+        .update({ name, email: data.user.email ?? "" })
+        .eq("id", data.user.id);
 
+      // QR 유입 쿠키가 있고 아직 호텔 유입 기록이 없으면 처리
+      const hotelCode = request.cookies.get("_hc")?.value;
+      const hotelPartnerId = request.cookies.get("_hid")?.value;
+      if (hotelCode && hotelPartnerId) {
+        // first_hotel_partner_id가 없는 유저에게만 기록 (중복 방지)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("profiles") as any).insert({
-          id: data.user.id,
-          email: data.user.email ?? "",
-          name,
-        });
+        const { data: profile } = await (supabase.from("profiles") as any)
+          .select("first_hotel_partner_id")
+          .eq("id", data.user.id)
+          .single();
 
-        // QR 유입 쿠키가 있으면 호텔 유입 기록
-        const hotelCode = request.cookies.get("_hc")?.value;
-        const hotelPartnerId = request.cookies.get("_hid")?.value;
-        if (hotelCode && hotelPartnerId) {
+        if (!profile?.first_hotel_partner_id) {
           await Promise.all([
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (supabase.from("profiles") as any).update({
