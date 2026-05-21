@@ -137,6 +137,7 @@ export function CampaignCard({ campaign, categories }: CampaignCardProps) {
               src={campaign.thumbnail_url}
               alt={campaign.title_zh_tw || campaign.title_ko}
               fill
+              sizes="(max-width: 640px) 224px, (max-width: 1024px) 288px, 288px"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (

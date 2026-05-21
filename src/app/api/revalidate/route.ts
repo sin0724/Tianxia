@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,6 +23,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const campaignId = body?.campaignId as string | undefined;
 
+  // 캐시 태그로 홈 데이터 즉시 무효화 (Next.js 16 - profile 인자 필요)
+  revalidateTag("home-data", "default");
   revalidatePath("/");
   revalidatePath("/campaigns");
 

@@ -30,16 +30,13 @@ export default async function MyPage() {
     redirect("/login");
   }
 
-  const { count: applicationCount } = await supabase
+  const { data: applicationStats } = await supabase
     .from("applications")
-    .select("*", { count: "exact", head: true })
+    .select("status")
     .eq("user_id", user.id);
 
-  const { count: approvedCount } = await supabase
-    .from("applications")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("status", "approved");
+  const applicationCount = applicationStats?.length ?? 0;
+  const approvedCount = applicationStats?.filter((a) => a.status === "approved").length ?? 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
