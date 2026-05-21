@@ -70,6 +70,14 @@ function SignupForm() {
       return;
     }
 
+    // Supabase는 이미 가입된 이메일로 signUp 시 에러 없이 동일 유저를 반환함.
+    // identities 배열이 비어 있으면 이미 존재하는 이메일.
+    if (!authData.user.identities || authData.user.identities.length === 0) {
+      setError("이미 가입된 이메일입니다. 로그인 페이지로 이동해주세요.");
+      setIsLoading(false);
+      return;
+    }
+
     const profileData = {
       id: authData.user.id,
       email: data.email,
@@ -86,9 +94,13 @@ function SignupForm() {
     const { error: profileError } = await (supabase.from("profiles") as any).insert(profileData);
 
     if (profileError) {
-      setError(`建立個人資料失敗: ${profileError.message}`);
-      setIsLoading(false);
-      return;
+      if (profileError.code === "23505") {
+        // 프로필이 이미 존재하는 경우 (Google 연동 등) → 가입 완료 처리
+      } else {
+        setError(`建立個人資料失敗: ${profileError.message}`);
+        setIsLoading(false);
+        return;
+      }
     }
 
     // 호텔 QR 유입 정보 연결 (쿠키에 있을 때만)
