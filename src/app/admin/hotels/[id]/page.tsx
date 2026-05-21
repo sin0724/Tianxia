@@ -79,9 +79,6 @@ export default async function HotelDetailPage({ params }: PageProps) {
   const pendingSettlementAmount =
     (completedCount ?? 0) * hotel.incentive_per_completion;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const qrUrl = `${appUrl}/h/${hotel.partner_code}`;
-
   const statusColor: Record<string, string> = {
     active: "bg-green-100 text-green-700",
     inactive: "bg-gray-100 text-gray-500",
@@ -218,7 +215,6 @@ export default async function HotelDetailPage({ params }: PageProps) {
         <HotelDetailQR
           hotelName={hotel.name}
           partnerCode={hotel.partner_code}
-          qrUrl={qrUrl}
         />
       </div>
 

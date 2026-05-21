@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,8 +80,11 @@ export function HotelForm({ hotel }: HotelFormProps) {
   });
 
   const partnerCode = form.watch("partner_code");
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const qrUrl = `${appUrl}/h/${partnerCode}`;
+  const [origin, setOrigin] = useState("");
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+  const qrUrl = `${origin}/h/${partnerCode}`;
 
   const onSubmit = async (data: HotelFormData) => {
     setIsLoading(true);

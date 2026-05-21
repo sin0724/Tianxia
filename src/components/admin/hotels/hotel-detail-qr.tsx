@@ -7,21 +7,24 @@ import { Copy, Check, Download } from "lucide-react";
 interface HotelDetailQRProps {
   hotelName: string;
   partnerCode: string;
-  qrUrl: string;
 }
 
-export function HotelDetailQR({ hotelName, partnerCode, qrUrl }: HotelDetailQRProps) {
+export function HotelDetailQR({ hotelName, partnerCode }: HotelDetailQRProps) {
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrUrl, setQrUrl] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    const url = `${window.location.origin}/h/${partnerCode}`;
+    setQrUrl(url);
+
     let cancelled = false;
 
     (async () => {
       try {
         const QRCode = (await import("qrcode")).default;
-        const dataUrl = await QRCode.toDataURL(qrUrl, {
+        const dataUrl = await QRCode.toDataURL(url, {
           width: 400,
           margin: 2,
           errorCorrectionLevel: "H",
@@ -36,7 +39,7 @@ export function HotelDetailQR({ hotelName, partnerCode, qrUrl }: HotelDetailQRPr
     return () => {
       cancelled = true;
     };
-  }, [qrUrl]);
+  }, [partnerCode]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(qrUrl);

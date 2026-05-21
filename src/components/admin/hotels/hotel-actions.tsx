@@ -24,8 +24,9 @@ export function HotelActions({ hotel }: HotelActionsProps) {
   const [showQR, setShowQR] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const qrUrl = `${appUrl}/h/${hotel.partner_code}`;
+  // 런타임에 실제 도메인을 자동으로 사용 (로컬/스테이징/프로덕션 모두 정확)
+  const getQrUrl = () =>
+    `${window.location.origin}/h/${hotel.partner_code}`;
 
   const handleDelete = async () => {
     if (
@@ -77,7 +78,7 @@ export function HotelActions({ hotel }: HotelActionsProps) {
   const handleShowQR = async () => {
     try {
       const QRCode = (await import("qrcode")).default;
-      const dataUrl = await QRCode.toDataURL(qrUrl, {
+      const dataUrl = await QRCode.toDataURL(getQrUrl(), {
         width: 400,
         margin: 2,
         color: { dark: "#000000", light: "#FFFFFF" },
@@ -170,7 +171,7 @@ export function HotelActions({ hotel }: HotelActionsProps) {
               />
             </div>
             <p className="mt-3 break-all text-center text-xs text-gray-400">
-              {qrUrl}
+              {getQrUrl()}
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowQR(false)}>
