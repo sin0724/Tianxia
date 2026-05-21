@@ -64,16 +64,31 @@ function SignupForm() {
       password: data.password,
     });
 
-    if (authError || !authData.user) {
-      setError(authError?.message || "註冊失敗，請稍後再試");
+    if (authError) {
+      const msg = authError.message ?? "";
+      if (
+        msg.includes("already registered") ||
+        msg.includes("already been registered") ||
+        msg.includes("User already exists")
+      ) {
+        setError("이미 가입된 이메일입니다. 로그인해주세요.");
+      } else {
+        setError("가입 중 오류가 발생했습니다. 다시 시도해주세요.");
+      }
       setIsLoading(false);
       return;
     }
 
-    // Supabase는 이미 가입된 이메일로 signUp 시 에러 없이 동일 유저를 반환함.
+    if (!authData.user) {
+      setError("가입 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Supabase는 이미 가입된 이메일로 signUp 시 에러 없이 동일 유저를 반환하는 경우가 있음.
     // identities 배열이 비어 있으면 이미 존재하는 이메일.
     if (!authData.user.identities || authData.user.identities.length === 0) {
-      setError("이미 가입된 이메일입니다. 로그인 페이지로 이동해주세요.");
+      setError("이미 가입된 이메일입니다. 로그인해주세요.");
       setIsLoading(false);
       return;
     }
@@ -94,13 +109,16 @@ function SignupForm() {
     const { error: profileError } = await (supabase.from("profiles") as any).insert(profileData);
 
     if (profileError) {
-      if (profileError.code === "23505") {
-        // 프로필이 이미 존재하는 경우 (Google 연동 등) → 가입 완료 처리
+      const isDuplicate =
+        profileError.code === "23505" ||
+        (profileError.message ?? "").includes("duplicate key");
+      if (isDuplicate) {
+        setError("이미 가입된 계정입니다. 로그인해주세요.");
       } else {
-        setError(`建立個人資料失敗: ${profileError.message}`);
-        setIsLoading(false);
-        return;
+        setError("계정 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
       }
+      setIsLoading(false);
+      return;
     }
 
     // 호텔 QR 유입 정보 연결 (쿠키에 있을 때만)
