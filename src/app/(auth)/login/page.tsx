@@ -176,7 +176,10 @@ function LoginForm() {
 
         <p className="text-center text-sm text-gray-500">
           還沒有帳戶？{" "}
-          <Link href="/signup" className="font-medium text-primary hover:underline">
+          <Link
+            href={`/signup?redirect=${encodeURIComponent(redirect)}`}
+            className="font-medium text-primary hover:underline"
+          >
             立即註冊
           </Link>
         </p>

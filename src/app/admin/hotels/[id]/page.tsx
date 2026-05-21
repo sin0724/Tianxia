@@ -42,6 +42,7 @@ export default async function HotelDetailPage({ params }: PageProps) {
     { count: completedCount },
     { data: recentApplications },
     { data: settlements },
+    { data: referralsRaw },
   ] = await Promise.all([
     supabase
       .from("hotel_referrals")
@@ -70,7 +71,30 @@ export default async function HotelDetailPage({ params }: PageProps) {
       .eq("hotel_partner_id", id)
       .order("settlement_month", { ascending: false })
       .limit(6),
+    supabase
+      .from("hotel_referrals")
+      .select("id, user_id, hotel_code, created_at")
+      .eq("hotel_partner_id", id)
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
+
+  // 유입 가입자 프로필 조회
+  const referralUserIds = referralsRaw?.map((r) => r.user_id) ?? [];
+  const { data: referralProfiles } = referralUserIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, name, email, instagram_url, instagram_handle")
+        .in("id", referralUserIds)
+    : { data: [] };
+
+  const referralProfileMap = new Map(
+    (referralProfiles ?? []).map((p) => [p.id, p])
+  );
+  const referrals = (referralsRaw ?? []).map((r) => ({
+    ...r,
+    profile: referralProfileMap.get(r.user_id) ?? null,
+  }));
 
   const totalSettlementAmount = settlements
     ?.filter((s) => s.status === "completed")
@@ -275,6 +299,68 @@ export default async function HotelDetailPage({ params }: PageProps) {
           </div>
         </div>
       )}
+
+      {/* QR 유입 가입자 목록 */}
+      <div className="rounded-xl bg-white p-6 shadow-sm">
+        <h3 className="mb-4 font-semibold text-gray-900">
+          QR 유입 가입자{" "}
+          <span className="ml-1 text-sm font-normal text-gray-400">
+            ({referralCount ?? 0}명)
+          </span>
+        </h3>
+        {referrals.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-gray-400">
+                  <th className="pb-2 font-medium">이름</th>
+                  <th className="pb-2 font-medium">이메일</th>
+                  <th className="pb-2 font-medium">인스타그램</th>
+                  <th className="pb-2 font-medium">가입일</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {referrals.map((r) => (
+                  <tr key={r.id}>
+                    <td className="py-2.5 font-medium text-gray-900">
+                      {r.profile?.name ?? "-"}
+                    </td>
+                    <td className="py-2.5 text-gray-500">
+                      {r.profile?.email ?? "-"}
+                    </td>
+                    <td className="py-2.5">
+                      {r.profile?.instagram_url ? (
+                        <a
+                          href={r.profile.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline"
+                        >
+                          {r.profile.instagram_handle || "@링크"}
+                        </a>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 text-gray-400">
+                      {formatDate(r.created_at, "ko")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(referralCount ?? 0) > 30 && (
+              <p className="mt-3 text-center text-xs text-gray-400">
+                최근 30명 표시 중 (전체 {referralCount}명)
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-gray-400">
+            QR 유입 가입자가 없습니다
+          </p>
+        )}
+      </div>
 
       {/* 최근 신청 목록 */}
       <div className="rounded-xl bg-white p-6 shadow-sm">
