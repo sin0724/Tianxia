@@ -93,11 +93,16 @@ function SignupForm() {
       return;
     }
 
+    // instagram URL에서 handle(@제외) 추출: https://instagram.com/username → username
+    const instagramHandle =
+      data.instagram_url.match(/instagram\.com\/?@?([^/?#]+)/)?.[1] ?? "";
+
     const profileData = {
       id: authData.user.id,
       email: data.email,
       name: data.name,
       line_id: data.line_id || null,
+      instagram_handle: instagramHandle,
       instagram_url: data.instagram_url,
       threads_url: data.threads_url || null,
       facebook_url: null,
@@ -124,20 +129,25 @@ function SignupForm() {
     // 호텔 QR 유입 정보 연결 (쿠키에 있을 때만)
     const { hotelCode, hotelPartnerId } = getHotelCookie();
     if (hotelCode && hotelPartnerId && authData.user) {
-      await Promise.all([
-        // 프로필에 최초 유입 호텔 저장
+      const [profileUpdateResult, referralResult] = await Promise.all([
         (supabase.from("profiles") as any).update({
           first_hotel_partner_id: hotelPartnerId,
           first_hotel_code: hotelCode,
           referred_at: new Date().toISOString(),
         }).eq("id", authData.user.id),
-        // hotel_referrals 기록
         (supabase.from("hotel_referrals") as any).insert({
           hotel_partner_id: hotelPartnerId,
           hotel_code: hotelCode,
           user_id: authData.user.id,
         }),
       ]);
+      // 실패해도 가입 자체는 완료 - 단, RLS 오류 가능성 있음 (migration 024 필요)
+      if (referralResult.error) {
+        console.error("[hotel referral] insert failed:", referralResult.error.message);
+      }
+      if (profileUpdateResult.error) {
+        console.error("[hotel referral] profile update failed:", profileUpdateResult.error.message);
+      }
     }
 
     router.push(redirect);

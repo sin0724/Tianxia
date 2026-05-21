@@ -29,7 +29,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
       name: profile.name,
-      line_id: profile.line_id,
+      line_id: profile.line_id || "",
       instagram_url: profile.instagram_url || "",
       threads_url: profile.threads_url || "",
       facebook_url: profile.facebook_url || "",
@@ -47,7 +47,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       .from("profiles")
       .update({
         name: data.name,
-        line_id: data.line_id,
+        line_id: data.line_id || null,
         instagram_url: data.instagram_url || null,
         threads_url: data.threads_url || null,
         facebook_url: data.facebook_url || null,
@@ -92,7 +92,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="line_id" className="text-gray-700">LINE ID *</Label>
+          <Label htmlFor="line_id" className="text-gray-700">LINE ID</Label>
           <Input id="line_id" className="h-11 rounded-lg border-gray-200" {...register("line_id")} />
           {errors.line_id && (
             <p className="text-sm text-red-500">{errors.line_id.message}</p>

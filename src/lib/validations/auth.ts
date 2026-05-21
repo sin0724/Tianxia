@@ -27,7 +27,7 @@ export const signupSchema = z.object({
 
 export const profileUpdateSchema = z.object({
   name: z.string().min(1, "請輸入姓名"),
-  line_id: z.string().min(1, "請輸入LINE ID"),
+  line_id: z.string().optional().or(z.literal("")),
   instagram_url: z.string().url("請輸入有效的Instagram網址").min(1, "請輸入Instagram網址"),
   threads_url: z.string().url("請輸入有效的網址").optional().or(z.literal("")),
   facebook_url: z.string().url("請輸入有效的網址").optional().or(z.literal("")),
