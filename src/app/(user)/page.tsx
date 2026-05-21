@@ -152,7 +152,7 @@ export default function HomePage() {
   );
 
   const premiumCampaigns = useMemo(
-    () => allCampaigns.filter((c) => c.campaign_type === "paid").slice(0, 4),
+    () => allCampaigns.filter((c) => c.campaign_type === "paid").slice(0, 8),
     [allCampaigns]
   );
 
@@ -407,7 +407,7 @@ export default function HomePage() {
 
       {/* PREMIUM 캠페인 섹션 */}
       {premiumCampaigns.length > 0 && (
-        <section className="relative overflow-hidden border-b border-amber-200/60 py-10 md:py-14">
+        <section className="relative overflow-hidden border-b border-amber-200/60 py-6 md:py-14">
           {/* 배경 그라디언트 */}
           <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(251,191,36,0.15),transparent_60%)]" />
@@ -415,36 +415,44 @@ export default function HomePage() {
 
           <div className="container relative mx-auto px-4">
             {/* 헤더 영역 */}
-            <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="mb-4 flex items-center justify-between md:mb-7">
               <div>
                 {/* 뱃지 */}
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-yellow-300/80 bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-1.5 shadow-md shadow-amber-200/50">
-                  <Crown className="h-3.5 w-3.5 text-white" />
-                  <span className="text-xs font-bold tracking-wide text-white">PREMIUM</span>
+                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-yellow-300/80 bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1 shadow-md shadow-amber-200/50 md:mb-3 md:px-4 md:py-1.5">
+                  <Crown className="h-3 w-3 text-white md:h-3.5 md:w-3.5" />
+                  <span className="text-[11px] font-bold tracking-wide text-white md:text-xs">PREMIUM</span>
                 </div>
-                <h2 className="mb-1 text-xl font-extrabold text-gray-900 md:text-2xl">
+                <h2 className="mb-0.5 text-base font-extrabold text-gray-900 md:mb-1 md:text-2xl">
                   有償合作體驗團
                 </h2>
-                <p className="text-sm text-amber-700/80">
+                <p className="text-xs text-amber-700/80 md:text-sm">
                   提供產品／服務 <span className="mx-1 text-amber-400">+</span> 額外支付合作費用
                 </p>
               </div>
 
-              {/* CTA 버튼 영역 */}
-              <div className="flex flex-wrap items-center gap-3">
-                <Link href="/campaigns?type=paid">
-                  <button className="group flex items-center gap-2 rounded-full border border-yellow-300 bg-white px-5 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:border-amber-400 hover:bg-amber-50 hover:shadow-md">
-                    <Sparkles className="h-4 w-4 text-amber-500 transition-transform group-hover:rotate-12" />
-                    查看全部 Premium 活動
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </button>
-                </Link>
-              </div>
+              {/* CTA 버튼 */}
+              <Link href="/campaigns?type=paid">
+                <button className="group flex shrink-0 items-center gap-1.5 rounded-full border border-yellow-300 bg-white px-3 py-2 text-xs font-semibold text-amber-700 shadow-sm transition-all hover:border-amber-400 hover:bg-amber-50 hover:shadow-md md:gap-2 md:px-5 md:py-2.5 md:text-sm">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500 transition-transform group-hover:rotate-12" />
+                  <span className="hidden sm:inline">查看全部 Premium 活動</span>
+                  <span className="sm:hidden">查看全部</span>
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 md:h-3.5 md:w-3.5" />
+                </button>
+              </Link>
             </div>
 
-            {/* 캠페인 카드 그리드 */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* 모바일: 가로 스크롤 */}
+            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:hidden">
               {premiumCampaigns.map((campaign) => (
+                <div key={campaign.id} className="w-56 shrink-0">
+                  <CampaignCard campaign={campaign as any} categories={categories} />
+                </div>
+              ))}
+            </div>
+
+            {/* 데스크톱: 그리드 */}
+            <div className="hidden sm:grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {premiumCampaigns.slice(0, 4).map((campaign) => (
                 <CampaignCard
                   key={campaign.id}
                   campaign={campaign as any}
@@ -477,9 +485,9 @@ export default function HomePage() {
                     </button>
                   </Link>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4">
+                <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 md:gap-4">
                   {campaignsByCategory[category.id].slice(0, 8).map((campaign) => (
-                    <div key={campaign.id} className="w-60 shrink-0 md:w-72">
+                    <div key={campaign.id} className="w-56 shrink-0 md:w-72">
                       <CampaignCard campaign={campaign as any} categories={categories} />
                     </div>
                   ))}
