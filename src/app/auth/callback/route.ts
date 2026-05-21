@@ -10,9 +10,30 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (!error && data.user) {
+      // OAuth 유저는 profiles 레코드가 없을 수 있으므로 없으면 자동 생성
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", data.user.id)
+        .single();
+
+      if (!existingProfile) {
+        const metadata = data.user.user_metadata ?? {};
+        const name =
+          metadata.full_name ||
+          metadata.name ||
+          (data.user.email ?? "").split("@")[0];
+
+        await supabase.from("profiles").insert({
+          id: data.user.id,
+          email: data.user.email ?? "",
+          name,
+        });
+      }
+
       return NextResponse.redirect(`${origin}${redirect}`);
     }
   }
