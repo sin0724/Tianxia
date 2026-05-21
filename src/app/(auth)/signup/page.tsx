@@ -85,14 +85,6 @@ function SignupForm() {
       return;
     }
 
-    // Supabase는 이미 가입된 이메일로 signUp 시 에러 없이 동일 유저를 반환하는 경우가 있음.
-    // identities 배열이 비어 있으면 이미 존재하는 이메일.
-    if (!authData.user.identities || authData.user.identities.length === 0) {
-      setError("此電子郵件已被註冊，請直接登入。");
-      setIsLoading(false);
-      return;
-    }
-
     // instagram URL에서 handle(@제외) 추출: https://instagram.com/username → username
     const instagramHandle =
       data.instagram_url.match(/instagram\.com\/?@?([^/?#]+)/)?.[1] ?? "";
