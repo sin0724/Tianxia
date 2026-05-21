@@ -16,10 +16,13 @@ export async function GET(
     .eq("status", "active")
     .single();
 
-  const destination = request.nextUrl.clone();
-  destination.pathname = "/campaigns";
-  destination.search = "";
-  const response = NextResponse.redirect(destination);
+  // Railway 등 리버스 프록시 환경에서 실제 공개 도메인을 가져옴
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+  const host = forwardedHost ?? request.headers.get("host") ?? "";
+  const baseUrl = host ? `${forwardedProto}://${host}` : new URL(request.url).origin;
+
+  const response = NextResponse.redirect(`${baseUrl}/campaigns`);
 
   if (hotel) {
     const cookieOpts = {
