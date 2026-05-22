@@ -278,24 +278,43 @@ export default function AdminApplicationsPage() {
                     )}
                   </div>
 
-                  {/* 일정 제안 표시 */}
+                  {/* 일정 제안 / 확정 표시 */}
                   {application.schedule_proposals && (
-                    <div className="rounded-md bg-blue-50 p-3 text-sm">
-                      <p className="font-medium text-blue-800">제안 일정</p>
-                      <div className="mt-1 flex flex-wrap gap-2">
-                        {application.schedule_proposals.proposed_dates?.map((d, i) => (
-                          <span key={i} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            application.schedule_proposals?.confirmed_date === d
-                              ? "bg-green-200 text-green-800"
-                              : "bg-blue-100 text-blue-700"
-                          }`}>{d}</span>
-                        ))}
-                      </div>
+                    <div className="rounded-md bg-blue-50 p-3 text-sm space-y-2">
+                      {/* 확정 날짜 - 있으면 최상단에 강조 표시 */}
+                      {application.schedule_proposals.confirmed_date && (
+                        <div className="flex items-center gap-2 rounded-md bg-green-100 px-3 py-2">
+                          <span className="text-base">📅</span>
+                          <div>
+                            <p className="text-xs font-medium text-green-700">확정 일정</p>
+                            <p className="font-bold text-green-900">{application.schedule_proposals.confirmed_date}</p>
+                          </div>
+                        </div>
+                      )}
+                      {/* 제안 날짜 목록 */}
+                      {application.schedule_proposals.proposed_dates?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-blue-700 mb-1">유저 제안 날짜</p>
+                          <div className="flex flex-wrap gap-2">
+                            {application.schedule_proposals.proposed_dates.map((d, i) => (
+                              <span key={i} className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                                {d}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {application.schedule_proposals.preferred_time && (
-                        <p className="mt-1 text-blue-700">선호시간: {application.schedule_proposals.preferred_time}</p>
+                        <p className="text-blue-700">선호시간: {application.schedule_proposals.preferred_time}</p>
                       )}
                       {application.schedule_proposals.message && (
-                        <p className="mt-1 text-blue-700">메시지: {application.schedule_proposals.message}</p>
+                        application.schedule_proposals.message.startsWith("[일정변경]") ? (
+                          <p className="rounded bg-orange-100 px-2 py-1 text-xs text-orange-800">
+                            변경 사유: {application.schedule_proposals.message.replace("[일정변경]", "").trim()}
+                          </p>
+                        ) : (
+                          <p className="text-blue-700">메시지: {application.schedule_proposals.message}</p>
+                        )
                       )}
                     </div>
                   )}
