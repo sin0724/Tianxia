@@ -50,12 +50,16 @@ export function ApplicationForm({ campaignId, userProfile }: ApplicationFormProp
       return;
     }
 
+    const hotelPartnerId = (userProfile as any)?.first_hotel_partner_id ?? null;
+    const hotelCode = (userProfile as any)?.first_hotel_code ?? null;
+
     const applicationData = {
       campaign_id: data.campaign_id,
       user_id: user.id,
       message: data.message || null,
       applied_instagram_url: data.applied_instagram_url,
       applied_threads_url: data.applied_threads_url || null,
+      ...(hotelPartnerId ? { hotel_partner_id: hotelPartnerId, hotel_code: hotelCode } : {}),
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
