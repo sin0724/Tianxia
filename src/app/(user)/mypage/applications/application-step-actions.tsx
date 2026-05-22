@@ -7,6 +7,7 @@ import { ExternalLink, CalendarDays, ClipboardList, FileText, BookOpen } from "l
 import { ScheduleForm } from "./schedule-form";
 import { ReservationForm } from "./reservation-form";
 import { DeliveryAddressForm } from "./delivery-address-form";
+import { RescheduleForm } from "./reschedule-form";
 import type { ApplicationStatus } from "@/types/database";
 
 interface ApplicationStepActionsProps {
@@ -36,6 +37,7 @@ export function ApplicationStepActions({
 }: ApplicationStepActionsProps) {
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showReservationForm, setShowReservationForm] = useState(false);
+  const [showRescheduleForm, setShowRescheduleForm] = useState(false);
   const [guideRead, setGuideRead] = useState(false);
 
   useEffect(() => {
@@ -116,7 +118,14 @@ export function ApplicationStepActions({
           </div>
         </div>
         <p className="text-xs text-gray-500">請在下方填寫預約資訊以確認到訪</p>
-        {showReservationForm ? (
+        {showRescheduleForm ? (
+          <RescheduleForm
+            applicationId={applicationId}
+            currentConfirmedDate={confirmedDate}
+            onSuccess={reload}
+            onCancel={() => setShowRescheduleForm(false)}
+          />
+        ) : showReservationForm ? (
           <ReservationForm
             applicationId={applicationId}
             confirmedDate={confirmedDate}
@@ -126,15 +135,24 @@ export function ApplicationStepActions({
             serviceOptions={serviceOptions}
           />
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
-            onClick={() => setShowReservationForm(true)}
-          >
-            <ClipboardList className="h-4 w-4" />
-            填寫預約資訊
-          </Button>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
+              onClick={() => setShowReservationForm(true)}
+            >
+              <ClipboardList className="h-4 w-4" />
+              填寫預約資訊
+            </Button>
+            <button
+              type="button"
+              onClick={() => setShowRescheduleForm(true)}
+              className="block text-xs text-gray-400 hover:text-orange-500 underline underline-offset-2 transition-colors"
+            >
+              日程有變動，申請更改日程
+            </button>
+          </div>
         )}
       </div>
     );
@@ -149,9 +167,29 @@ export function ApplicationStepActions({
       );
     }
     return (
-      <p className="text-sm text-muted-foreground">
-        ⏳ 預約資訊已送出，請等待廣告主確認
-      </p>
+      <div className="space-y-2">
+        {showRescheduleForm ? (
+          <RescheduleForm
+            applicationId={applicationId}
+            currentConfirmedDate={confirmedDate ?? ""}
+            onSuccess={reload}
+            onCancel={() => setShowRescheduleForm(false)}
+          />
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">
+              ⏳ 預約資訊已送出，請等待廣告主確認
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowRescheduleForm(true)}
+              className="text-xs text-gray-400 hover:text-orange-500 underline underline-offset-2 transition-colors"
+            >
+              日程有變動，申請更改日程
+            </button>
+          </>
+        )}
+      </div>
     );
   }
 

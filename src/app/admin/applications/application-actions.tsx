@@ -220,6 +220,11 @@ export function ApplicationActions({
               일정 제안 수신됨
             </span>
           )}
+          {scheduleProposal?.message?.startsWith("[일정변경]") && (
+            <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+              🔄 일정 변경 요청
+            </span>
+          )}
         </p>
         {scheduleProposal && (
           <div className="rounded bg-blue-100 px-3 py-2">
@@ -240,7 +245,13 @@ export function ApplicationActions({
               <p className="mt-1 text-xs text-blue-600">선호시간: {scheduleProposal.preferred_time}</p>
             )}
             {scheduleProposal.message && (
-              <p className="mt-1 text-xs text-blue-600">메시지: {scheduleProposal.message}</p>
+              scheduleProposal.message.startsWith("[일정변경]") ? (
+                <p className="mt-1.5 rounded bg-orange-100 px-2 py-1 text-xs text-orange-800">
+                  변경 사유: {scheduleProposal.message.replace("[일정변경]", "").trim()}
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-blue-600">메시지: {scheduleProposal.message}</p>
+              )
             )}
           </div>
         )}
