@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
-import { Check, X, Calendar, ClipboardCheck, Trophy, Trash2 } from "lucide-react";
+import { Check, X, Calendar, ClipboardCheck, Trophy, Trash2, ExternalLink, FileText, Clock } from "lucide-react";
 import type { ApplicationStatus } from "@/types/database";
 
 interface ScheduleProposal {
@@ -17,10 +17,20 @@ interface ScheduleProposal {
   confirmed_date: string | null;
 }
 
+interface ReviewInfo {
+  id: string;
+  review_url: string;
+  content: string | null;
+  visited_at: string | null;
+  submitted_at: string;
+  status: string;
+}
+
 interface ApplicationActionsProps {
   applicationId: string;
   status: ApplicationStatus;
   scheduleProposal: ScheduleProposal | null;
+  review: ReviewInfo | null;
   isDelivery?: boolean;
   hotelPartnerId?: string | null;
   onStatusChange?: () => void;
@@ -30,6 +40,7 @@ export function ApplicationActions({
   applicationId,
   status,
   scheduleProposal,
+  review,
   isDelivery,
   hotelPartnerId,
   onStatusChange,
@@ -299,14 +310,71 @@ export function ApplicationActions({
     );
   }
 
-  // 4단계: visit_confirmed → 완료 처리
+  // 4단계: visit_confirmed → 후기 확인 후 완료 처리
   if (status === "visit_confirmed") {
+    const approveAndComplete = async () => {
+      setIsLoading(true);
+      if (review?.id) {
+        const { error: reviewError } = await supabase
+          .from("reviews")
+          .update({ status: "approved" })
+          .eq("id", review.id);
+        if (reviewError) {
+          toast({ title: "오류 발생", description: reviewError.message, variant: "destructive" });
+          setIsLoading(false);
+          return;
+        }
+      }
+      await updateStatus("completed");
+    };
+
     return (
-      <div className="rounded-md border bg-muted/30 p-4">
+      <div className="space-y-3 rounded-md border bg-purple-50 p-4">
+        <p className="text-sm font-semibold text-purple-800">
+          <FileText className="mr-1 inline h-4 w-4" />
+          후기 확인
+        </p>
+
+        {review ? (
+          <div className="rounded bg-purple-100 px-3 py-2.5 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                review.status === "approved" ? "bg-green-200 text-green-800" : "bg-yellow-200 text-yellow-800"
+              }`}>
+                {review.status === "approved" ? "승인됨" : "제출됨"}
+              </span>
+              {review.visited_at && (
+                <span className="text-xs text-purple-600">방문일: {review.visited_at}</span>
+              )}
+            </div>
+            <a
+              href={review.review_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-primary hover:underline break-all"
+            >
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              {review.review_url}
+            </a>
+            {review.content && (
+              <p className="text-xs text-purple-700 rounded bg-purple-50 px-2 py-1">{review.content}</p>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 rounded bg-gray-100 px-3 py-2 text-sm text-gray-500">
+            <Clock className="h-4 w-4" />
+            아직 후기가 제출되지 않았습니다
+          </div>
+        )}
+
         <div className="flex gap-2">
-          <Button onClick={() => updateStatus("completed")} disabled={isLoading} variant="outline" className="gap-2">
+          <Button
+            onClick={approveAndComplete}
+            disabled={isLoading}
+            className="gap-2 bg-purple-600 hover:bg-purple-700"
+          >
             {isLoading ? <LoadingSpinner size="sm" /> : <Trophy className="h-4 w-4" />}
-            완료 처리
+            {review ? "후기 승인 & 완료처리" : "완료처리"}
           </Button>
         </div>
         {deleteButton}

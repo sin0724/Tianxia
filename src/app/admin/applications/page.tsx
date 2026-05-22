@@ -36,6 +36,15 @@ interface DeliveryAddress {
   email: string;
 }
 
+interface ReviewInfo {
+  id: string;
+  review_url: string;
+  content: string | null;
+  visited_at: string | null;
+  submitted_at: string;
+  status: string;
+}
+
 interface Application {
   id: string;
   campaign_id: string;
@@ -65,6 +74,7 @@ interface Application {
   schedule_proposals: ScheduleProposal | null;
   reservation_info: ReservationInfo | null;
   delivery_addresses: DeliveryAddress | null;
+  reviews: ReviewInfo | null;
   hotel_partner_id: string | null;
   hotel_code: string | null;
   is_settlement_target: boolean;
@@ -113,7 +123,8 @@ export default function AdminApplicationsPage() {
         campaigns (id, title_ko, brand_name_ko, is_delivery),
         schedule_proposals (proposed_dates, preferred_time, message, confirmed_date),
         reservation_info (visitor_name, reservation_datetime, emergency_contact, line_id, selected_service, special_requests),
-        delivery_addresses (recipient_name, country, city_state, zipcode, address, mobile, email)
+        delivery_addresses (recipient_name, country, city_state, zipcode, address, mobile, email),
+        reviews (id, review_url, content, visited_at, submitted_at, status)
       `)
       .order("applied_at", { ascending: false });
 
@@ -123,6 +134,7 @@ export default function AdminApplicationsPage() {
         schedule_proposals: Array.isArray(a.schedule_proposals) ? a.schedule_proposals[0] ?? null : a.schedule_proposals,
         reservation_info: Array.isArray(a.reservation_info) ? a.reservation_info[0] ?? null : a.reservation_info,
         delivery_addresses: Array.isArray(a.delivery_addresses) ? a.delivery_addresses[0] ?? null : a.delivery_addresses,
+        reviews: Array.isArray(a.reviews) ? a.reviews[0] ?? null : a.reviews,
       })) as unknown as Application[]);
     }
     setLoading(false);
@@ -343,6 +355,7 @@ export default function AdminApplicationsPage() {
                     applicationId={application.id}
                     status={application.status}
                     scheduleProposal={application.schedule_proposals}
+                    review={application.reviews}
                     isDelivery={application.campaigns?.is_delivery ?? false}
                     hotelPartnerId={application.hotel_partner_id}
                     onStatusChange={fetchApplications}
