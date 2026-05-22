@@ -37,24 +37,28 @@ export function ScheduleForm({ applicationId, onSuccess }: ScheduleFormProps) {
   const onSubmit = async (data: ScheduleProposalInput) => {
     const validDates = dates.filter(Boolean);
     if (validDates.length === 0) {
-      toast({ title: "최소 1개 날짜를 입력해주세요", variant: "destructive" });
+      toast({ title: "請至少選擇一個希望日期", variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
     const supabase = createClient();
 
-    const { error: insertError } = await supabase
+    // upsert: 이미 제안이 있으면 덮어씀 (unique constraint 오류 방지)
+    const { error: upsertError } = await supabase
       .from("schedule_proposals")
-      .insert({
-        application_id: applicationId,
-        proposed_dates: validDates,
-        preferred_time: data.preferred_time || null,
-        message: data.message || null,
-      });
+      .upsert(
+        {
+          application_id: applicationId,
+          proposed_dates: validDates,
+          preferred_time: data.preferred_time || null,
+          message: data.message || null,
+        },
+        { onConflict: "application_id" }
+      );
 
-    if (insertError) {
-      toast({ title: "오류 발생", description: insertError.message, variant: "destructive" });
+    if (upsertError) {
+      toast({ title: "提案失敗", description: "請稍後再試", variant: "destructive" });
       setIsLoading(false);
       return;
     }
@@ -65,12 +69,12 @@ export function ScheduleForm({ applicationId, onSuccess }: ScheduleFormProps) {
       .eq("id", applicationId);
 
     if (updateError) {
-      toast({ title: "오류 발생", description: updateError.message, variant: "destructive" });
+      toast({ title: "狀態更新失敗", description: "提案已送出，請重新整理頁面", variant: "destructive" });
       setIsLoading(false);
       return;
     }
 
-    toast({ title: "日程提案完成", description: "請等待管理員確認日程" });
+    toast({ title: "日程提案完成！", description: "請等待管理員確認日程" });
     setIsLoading(false);
     onSuccess();
   };
