@@ -50,13 +50,6 @@ interface HotelFormProps {
   hotel?: HotelData;
 }
 
-function generatePartnerCode(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const rand = (n: number) =>
-    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `HTL-${rand(6)}`;
-}
-
 export function HotelForm({ hotel }: HotelFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -72,7 +65,7 @@ export function HotelForm({ hotel }: HotelFormProps) {
       contact_name: hotel?.contact_name ?? "",
       contact_phone: hotel?.contact_phone ?? "",
       contact_email: hotel?.contact_email ?? "",
-      partner_code: hotel?.partner_code ?? generatePartnerCode(),
+      partner_code: hotel?.partner_code ?? "",
       incentive_per_completion: hotel?.incentive_per_completion ?? 20000,
       status: hotel?.status ?? "active",
       notes: hotel?.notes ?? "",
@@ -233,22 +226,13 @@ export function HotelForm({ hotel }: HotelFormProps) {
           {/* 추천인 코드 */}
           <div>
             <Label htmlFor="partner_code">추천인 코드</Label>
-            <div className="mt-1 flex gap-2">
+            <div className="mt-1">
               <Input
                 id="partner_code"
                 {...form.register("partner_code")}
                 className="font-mono uppercase tracking-widest"
-                placeholder="HTL-XXXXXX"
+                placeholder="예: LOTTESEOUL"
               />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  form.setValue("partner_code", generatePartnerCode())
-                }
-              >
-                재생성
-              </Button>
             </div>
             {form.formState.errors.partner_code && (
               <p className="mt-1 text-sm text-red-500">

@@ -285,8 +285,8 @@ function SignupForm() {
               推薦人代碼 <span className="text-xs font-normal text-gray-400">（選填，如飯店提供）</span>
             </Label>
             <Input
-              placeholder="例：HTL-ABC123"
-              className="h-11 rounded-lg border-gray-200 font-mono uppercase tracking-widest"
+              placeholder="請輸入推薦人代碼"
+              className="h-11 rounded-lg border-gray-200 uppercase tracking-widest"
               value={referralCode}
               onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
             />
