@@ -190,26 +190,28 @@ export function ApplicationActions({
   }
 
   // 2단계: schedule_proposed → 관리자가 정확한 날짜+시간 직접 입력
-  if (status === "schedule_proposed" && scheduleProposal) {
+  if (status === "schedule_proposed") {
     return (
       <div className="space-y-3 rounded-md border bg-blue-50 p-4">
         <p className="text-sm font-semibold text-blue-800">
           <Calendar className="mr-1 inline h-4 w-4" />
           일정 확정 (날짜·시간 직접 입력)
         </p>
-        <div className="rounded bg-blue-100 px-3 py-2">
-          <p className="mb-1 text-xs font-medium text-blue-700">유저 제안 날짜</p>
-          <div className="flex flex-wrap gap-1.5">
-            {scheduleProposal.proposed_dates?.map((date, i) => (
-              <span key={i} className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                {date}
-              </span>
-            ))}
+        {scheduleProposal && (
+          <div className="rounded bg-blue-100 px-3 py-2">
+            <p className="mb-1 text-xs font-medium text-blue-700">유저 제안 날짜</p>
+            <div className="flex flex-wrap gap-1.5">
+              {scheduleProposal.proposed_dates?.map((date, i) => (
+                <span key={i} className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                  {date}
+                </span>
+              ))}
+            </div>
+            {scheduleProposal.preferred_time && (
+              <p className="mt-1 text-xs text-blue-600">선호시간: {scheduleProposal.preferred_time}</p>
+            )}
           </div>
-          {scheduleProposal.preferred_time && (
-            <p className="mt-1 text-xs text-blue-600">선호시간: {scheduleProposal.preferred_time}</p>
-          )}
-        </div>
+        )}
         <div className="space-y-1.5">
           <Label className="text-sm">확정 날짜 및 시간 입력 *</Label>
           <Input
