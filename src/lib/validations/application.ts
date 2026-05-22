@@ -24,6 +24,7 @@ export const scheduleProposalSchema = z.object({
 export const reservationInfoSchema = z.object({
   application_id: z.string().uuid(),
   visitor_name: z.string().min(1, "請輸入中文姓名"),
+  visitor_count: z.coerce.number().int().min(1, "最少1人").max(20, "最多20人"),
   reservation_datetime: z.string().min(1, "請填寫預約日期與時間"),
   emergency_contact: z.string().min(1, "請輸入緊急聯絡方式"),
   line_id: z.string().optional(),

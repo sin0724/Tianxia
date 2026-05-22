@@ -268,6 +268,7 @@ export type Database = {
           id: string;
           application_id: string;
           visitor_name: string;
+          visitor_count: number;
           reservation_datetime: string;
           emergency_contact: string;
           line_id: string | null;
@@ -280,6 +281,7 @@ export type Database = {
           id?: string;
           application_id: string;
           visitor_name: string;
+          visitor_count?: number;
           reservation_datetime: string;
           emergency_contact: string;
           line_id?: string | null;
@@ -292,6 +294,7 @@ export type Database = {
           id?: string;
           application_id?: string;
           visitor_name?: string;
+          visitor_count?: number;
           reservation_datetime?: string;
           emergency_contact?: string;
           line_id?: string | null;

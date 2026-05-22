@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
-import { ClipboardList, User, Phone, MessageSquare, Calendar, Star } from "lucide-react";
+import { ClipboardList, User, Phone, MessageSquare, Calendar, Star, Users } from "lucide-react";
 
 interface ReservationFormProps {
   applicationId: string;
@@ -37,6 +37,7 @@ export function ReservationForm({
     defaultValues: {
       application_id: applicationId,
       visitor_name: userName || "",
+      visitor_count: 1,
       line_id: userLineId || "",
       reservation_datetime: confirmedDate,
     },
@@ -52,6 +53,7 @@ export function ReservationForm({
         {
           application_id: applicationId,
           visitor_name: data.visitor_name,
+          visitor_count: data.visitor_count,
           reservation_datetime: confirmedDate,
           emergency_contact: data.emergency_contact,
           line_id: data.line_id || null,
@@ -115,7 +117,28 @@ export function ReservationForm({
         )}
       </div>
 
-      {/* 2. 緊急聯絡方式 */}
+      {/* 2. 方문 인원 */}
+      <div className="space-y-1.5">
+        <Label className="flex items-center gap-1.5 text-sm font-medium">
+          <Users className="h-3.5 w-3.5 text-gray-500" />
+          到訪人數<span className="text-red-500">*</span>
+        </Label>
+        <div className="flex items-center gap-3">
+          <Input
+            {...register("visitor_count")}
+            type="number"
+            min={1}
+            max={20}
+            className="w-24 bg-white"
+          />
+          <span className="text-sm text-gray-500">人</span>
+        </div>
+        {errors.visitor_count && (
+          <p className="text-xs text-red-500">{errors.visitor_count.message}</p>
+        )}
+      </div>
+
+      {/* 3. 緊急聯絡方式 */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-sm font-medium">
           <Phone className="h-3.5 w-3.5 text-gray-500" />
@@ -131,7 +154,7 @@ export function ReservationForm({
         )}
       </div>
 
-      {/* 3. LINE ID */}
+      {/* 4. LINE ID */}
       <div className="space-y-1.5">
         <Label className="text-sm font-medium">LINE ID</Label>
         <Input
@@ -141,7 +164,7 @@ export function ReservationForm({
         />
       </div>
 
-      {/* 4. 서비스 선택 (옵션이 있는 캠페인만 표시) */}
+      {/* 5. 서비스 선택 (옵션이 있는 캠페인만 표시) */}
       {serviceOptions && serviceOptions.length > 0 && (
         <div className="space-y-1.5">
           <Label className="flex items-center gap-1.5 text-sm font-medium">
@@ -162,7 +185,7 @@ export function ReservationForm({
         </div>
       )}
 
-      {/* 5. 其他備註 */}
+      {/* 6. 其他備註 */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-sm font-medium">
           <MessageSquare className="h-3.5 w-3.5 text-gray-500" />
