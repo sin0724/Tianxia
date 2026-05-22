@@ -22,6 +22,7 @@ interface ReservationInfo {
   reservation_datetime: string;
   emergency_contact: string;
   line_id: string | null;
+  selected_service: string | null;
   special_requests: string | null;
 }
 
@@ -111,7 +112,7 @@ export default function AdminApplicationsPage() {
         profiles (id, name, email, instagram_handle, region),
         campaigns (id, title_ko, brand_name_ko, is_delivery),
         schedule_proposals (proposed_dates, preferred_time, message, confirmed_date),
-        reservation_info (visitor_name, reservation_datetime, emergency_contact, line_id, special_requests),
+        reservation_info (visitor_name, reservation_datetime, emergency_contact, line_id, selected_service, special_requests),
         delivery_addresses (recipient_name, country, city_state, zipcode, address, mobile, email)
       `)
       .order("applied_at", { ascending: false });
@@ -298,6 +299,11 @@ export default function AdminApplicationsPage() {
                           <span>긴급연락: {application.reservation_info.emergency_contact}</span>
                           {application.reservation_info.line_id && (
                             <span>LINE ID: {application.reservation_info.line_id}</span>
+                          )}
+                          {application.reservation_info.selected_service && (
+                            <span className="col-span-2 font-medium text-green-800">
+                              선택 서비스: {application.reservation_info.selected_service}
+                            </span>
                           )}
                         </div>
                         {application.reservation_info.special_requests && (
