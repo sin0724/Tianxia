@@ -26,6 +26,9 @@ import { PLATFORMS } from "@/constants/platforms";
 import { Upload, X, ImageIcon, Plus, Trash2 } from "lucide-react";
 import type { Campaign, Category } from "@/types/database";
 
+const DEFAULT_GUIDE_KO = "촬영 가이드 및 주의사항은 예약 확정 후 구글 드라이브 링크를 통해 개별 안내드립니다.";
+const DEFAULT_GUIDE_ZH = "拍攝指南及注意事項將於預約確認後透過 Google 雲端硬碟連結個別通知。";
+
 interface CampaignFormProps {
   campaign?: Campaign;
 }
@@ -245,15 +248,18 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
       const summaryText = guideText.split("\n")[0]?.slice(0, 100) || "";
       const descriptionText = guideText;
 
+      // guide_ko is always a fixed sentence — use hardcoded Chinese, no API call needed
+      const guideZhTw = guideText.trim() === DEFAULT_GUIDE_KO || !guideText.trim()
+        ? DEFAULT_GUIDE_ZH
+        : guideText;
+
       let translations: Record<string, string | null | undefined> = {};
 
       if (!skipTranslation) {
-        // Determine which content fields actually changed
+        // Determine which content fields actually changed (guide excluded — hardcoded)
         type TranslatePayload = {
           title_ko?: string;
           brand_name_ko?: string;
-          summary_ko?: string;
-          description_ko?: string;
           precautions_ko?: string;
           service_options_ko?: string;
         };
@@ -261,29 +267,22 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         let payload: TranslatePayload;
 
         if (!isEditing) {
-          // New campaign: translate all fields
+          // New campaign: translate title/brand + optional fields
           payload = {
             title_ko: data.title_ko || "",
             brand_name_ko: data.brand_name_ko || "",
-            summary_ko: summaryText,
-            description_ko: descriptionText,
             ...(data.precautions_ko ? { precautions_ko: data.precautions_ko } : {}),
             ...(serviceOptions.trim() ? { service_options_ko: serviceOptions.trim() } : {}),
           };
         } else {
           // Editing: only translate fields that actually changed
           const c = campaign!;
-          const origGuide = c.description_ko || c.summary_ko || "";
 
           payload = {};
           if (data.title_ko !== c.title_ko)
             payload.title_ko = data.title_ko || "";
           if ((data.brand_name_ko || "") !== (c.brand_name_ko || ""))
             payload.brand_name_ko = data.brand_name_ko || "";
-          if (guideText !== origGuide) {
-            payload.summary_ko = summaryText;
-            payload.description_ko = descriptionText;
-          }
           if ((data.precautions_ko || "") !== (c.precautions_ko || ""))
             payload.precautions_ko = data.precautions_ko || "";
           const origServiceOptions = (campaign as any)?.service_options || "";
@@ -381,6 +380,8 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         brand_name_ko: data.brand_name_ko || "",
         summary_ko: summaryText || "",
         description_ko: descriptionText || "",
+        summary_zh_tw: guideZhTw.split("\n")[0]?.slice(0, 100) || "",
+        description_zh_tw: guideZhTw,
         benefits_ko: "",
         benefits_zh_tw: "",
         requirements_ko: "인스타그램, 쓰레드 계정 소지자",

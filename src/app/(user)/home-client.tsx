@@ -422,11 +422,18 @@ export function HomeClient({
                 </button>
               </Link>
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+            {/* 모바일: 가로 스크롤 */}
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:hidden">
               {bookmarkedCampaigns.map((campaign) => (
-                <div key={campaign.id} className="w-56 shrink-0 md:w-64">
+                <div key={campaign.id} className="w-56 shrink-0">
                   <CampaignCard campaign={campaign as any} categories={initialCategories as any} />
                 </div>
+              ))}
+            </div>
+            {/* 데스크톱: 그리드 */}
+            <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {bookmarkedCampaigns.map((campaign) => (
+                <CampaignCard key={campaign.id} campaign={campaign as any} categories={initialCategories as any} />
               ))}
             </div>
           </div>
@@ -508,11 +515,18 @@ export function HomeClient({
                     </button>
                   </Link>
                 </div>
-                <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 md:gap-4">
+                {/* 모바일: 가로 스크롤 */}
+                <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 md:hidden">
                   {campaignsByCategory[category.id].slice(0, 8).map((campaign) => (
-                    <div key={campaign.id} className="w-56 shrink-0 md:w-72">
+                    <div key={campaign.id} className="w-56 shrink-0">
                       <CampaignCard campaign={campaign as any} categories={initialCategories as any} />
                     </div>
+                  ))}
+                </div>
+                {/* 데스크톱: 그리드 */}
+                <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {campaignsByCategory[category.id].slice(0, 8).map((campaign) => (
+                    <CampaignCard key={campaign.id} campaign={campaign as any} categories={initialCategories as any} />
                   ))}
                 </div>
               </div>
