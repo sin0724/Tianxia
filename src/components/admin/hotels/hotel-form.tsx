@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +23,7 @@ const hotelSchema = z.object({
     .email("올바른 이메일 형식을 입력해주세요")
     .optional()
     .or(z.literal("")),
-  partner_code: z.string().min(1, "파트너 코드를 생성해주세요"),
+  partner_code: z.string().min(1, "추천인 코드를 생성해주세요"),
   incentive_per_completion: z.coerce.number().min(0),
   status: z.enum(["active", "inactive", "pending"]),
   notes: z.string().optional(),
@@ -79,13 +79,6 @@ export function HotelForm({ hotel }: HotelFormProps) {
     },
   });
 
-  const partnerCode = form.watch("partner_code");
-  const [origin, setOrigin] = useState("");
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
-  const qrUrl = `${origin}/h/${partnerCode}`;
-
   const onSubmit = async (data: HotelFormData) => {
     setIsLoading(true);
     const supabase = createClient();
@@ -98,6 +91,7 @@ export function HotelForm({ hotel }: HotelFormProps) {
       contact_name: data.contact_name || null,
       contact_phone: data.contact_phone || null,
       contact_email: data.contact_email || null,
+      partner_code: data.partner_code,
       incentive_per_completion: data.incentive_per_completion,
       status: data.status,
       notes: data.notes || null,
@@ -110,19 +104,20 @@ export function HotelForm({ hotel }: HotelFormProps) {
         .eq("id", hotel.id);
 
       if (error) {
-        alert("수정 중 오류가 발생했습니다: " + error.message);
+        if (error.code === "23505") {
+          alert("이미 사용 중인 추천인 코드입니다. 코드를 재생성해주세요.");
+        } else {
+          alert("수정 중 오류가 발생했습니다: " + error.message);
+        }
         setIsLoading(false);
         return;
       }
     } else {
-      const { error } = await supabase.from("hotel_partners").insert({
-        ...payload,
-        partner_code: data.partner_code,
-      });
+      const { error } = await supabase.from("hotel_partners").insert(payload);
 
       if (error) {
         if (error.code === "23505") {
-          alert("이미 사용 중인 파트너 코드입니다. 코드를 재생성해주세요.");
+          alert("이미 사용 중인 추천인 코드입니다. 코드를 재생성해주세요.");
         } else {
           alert("등록 중 오류가 발생했습니다: " + error.message);
         }
@@ -235,43 +230,34 @@ export function HotelForm({ hotel }: HotelFormProps) {
       <div className="rounded-xl bg-white p-6 shadow-sm">
         <h3 className="mb-4 font-semibold text-gray-900">파트너 설정</h3>
         <div className="space-y-4">
-          {/* 파트너 코드 */}
+          {/* 추천인 코드 */}
           <div>
-            <Label htmlFor="partner_code">
-              파트너 코드{isEdit && <span className="ml-2 text-xs text-gray-400">(등록 후 변경 불가)</span>}
-            </Label>
+            <Label htmlFor="partner_code">추천인 코드</Label>
             <div className="mt-1 flex gap-2">
               <Input
                 id="partner_code"
                 {...form.register("partner_code")}
-                readOnly={isEdit}
-                className={`font-mono uppercase tracking-widest ${
-                  isEdit ? "bg-gray-50 text-gray-600" : ""
-                }`}
+                className="font-mono uppercase tracking-widest"
+                placeholder="HTL-XXXXXX"
               />
-              {!isEdit && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    form.setValue("partner_code", generatePartnerCode())
-                  }
-                >
-                  재생성
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  form.setValue("partner_code", generatePartnerCode())
+                }
+              >
+                재생성
+              </Button>
             </div>
             {form.formState.errors.partner_code && (
               <p className="mt-1 text-sm text-red-500">
                 {form.formState.errors.partner_code.message}
               </p>
             )}
-            <div className="mt-2 rounded-lg bg-blue-50 px-3 py-2">
-              <p className="text-xs text-gray-500">
-                QR 링크:{" "}
-                <span className="break-all font-mono text-blue-600">{qrUrl}</span>
-              </p>
-            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              가입자가 회원가입 시 입력하는 코드입니다. 호텔에 알려주세요.
+            </p>
           </div>
 
           {/* 인센티브 */}

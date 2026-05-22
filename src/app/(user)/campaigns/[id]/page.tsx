@@ -13,10 +13,9 @@ import { ApplicationForm } from "./application-form";
 
 interface CampaignDetailPageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ref?: string; rid?: string }>;
 }
 
-export async function generateMetadata({ params }: CampaignDetailPageProps) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: campaign } = await supabase
@@ -61,11 +60,8 @@ export async function generateMetadata({ params }: CampaignDetailPageProps) {
 
 export default async function CampaignDetailPage({
   params,
-  searchParams,
 }: CampaignDetailPageProps) {
   const { id } = await params;
-  const { ref = "", rid = "" } = await searchParams;
-  const hotelSuffix = ref && rid ? `&ref=${encodeURIComponent(ref)}&rid=${encodeURIComponent(rid)}` : "";
   const supabase = await createClient();
 
   const { data: campaign, error } = await supabase
@@ -202,7 +198,7 @@ export default async function CampaignDetailPage({
           {isDeadlinePassed ? (
             <Button size="sm" disabled className="rounded-full px-5">已截止</Button>
           ) : !user ? (
-            <Link href={`/login?redirect=/campaigns/${campaign.id}${hotelSuffix}`}>
+            <Link href={`/login?redirect=/campaigns/${campaign.id}`}>
               <Button size="sm" className="rounded-full px-5">登入申請</Button>
             </Link>
           ) : existingApplication ? (
@@ -461,12 +457,12 @@ export default async function CampaignDetailPage({
                     <p className="text-sm text-muted-foreground">
                       登入後即可申請此活動
                     </p>
-                    <Link href={`/login?redirect=/campaigns/${id}${hotelSuffix}`}>
+                    <Link href={`/login?redirect=/campaigns/${id}`}>
                       <Button className="w-full">登入申請</Button>
                     </Link>
                     <p className="text-xs text-muted-foreground">
                       還沒有帳戶？{" "}
-                      <Link href={`/signup${ref && rid ? `?ref=${encodeURIComponent(ref)}&rid=${encodeURIComponent(rid)}` : ""}`} className="text-primary hover:underline">
+                      <Link href="/signup" className="text-primary hover:underline">
                         立即註冊
                       </Link>
                     </p>

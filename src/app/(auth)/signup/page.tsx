@@ -12,15 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { getHotelCookie } from "@/lib/hotel-cookie";
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
-  const urlRef = searchParams.get("ref") || "";
-  const urlRid = searchParams.get("rid") || "";
   const [isLoading, setIsLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,19 +108,15 @@ function SignupForm() {
       return;
     }
 
-    // 호텔 QR 유입 정보 연결 - URL 파라미터 우선, localStorage/쿠키 폴백
-    const cookie = getHotelCookie();
-    const hotelCode = urlRef || cookie.hotelCode;
-    const hotelPartnerId = urlRid || cookie.hotelPartnerId;
-    if (hotelCode && hotelPartnerId) {
+    // 추천인 코드 입력 시 호텔 유입 기록
+    if (referralCode.trim()) {
       try {
         await fetch("/api/hotel-referral", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: authData.user.id,
-            hotelCode,
-            hotelPartnerId,
+            referralCode: referralCode.trim(),
           }),
         });
       } catch {
@@ -283,6 +277,18 @@ function SignupForm() {
               placeholder="https://threads.net/@yourusername"
               className="h-11 rounded-lg border-gray-200"
               {...register("threads_url")}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-gray-700">
+              推薦人代碼 <span className="text-xs font-normal text-gray-400">（選填，如飯店提供）</span>
+            </Label>
+            <Input
+              placeholder="例：HTL-ABC123"
+              className="h-11 rounded-lg border-gray-200 font-mono uppercase tracking-widest"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
             />
           </div>
 

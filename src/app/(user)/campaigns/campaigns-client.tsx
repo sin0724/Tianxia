@@ -204,7 +204,7 @@ export default function CampaignsClient() {
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, page]);
 
-  // Update URL params (hotel ref/rid params are preserved)
+  // Update URL params
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
@@ -213,13 +213,6 @@ export default function CampaignsClient() {
     if (selectedPlatform && selectedPlatform !== "all") params.set("platform", selectedPlatform);
     if (selectedCampaignType !== "all") params.set("type", selectedCampaignType);
     if (sortBy !== "popular") params.set("sort", sortBy);
-
-    const ref = searchParams.get("ref");
-    const rid = searchParams.get("rid");
-    if (ref && rid) {
-      params.set("ref", ref);
-      params.set("rid", rid);
-    }
 
     const newUrl = params.toString() ? `?${params.toString()}` : "/campaigns";
     router.replace(newUrl, { scroll: false });
@@ -412,19 +405,13 @@ export default function CampaignsClient() {
           </div>
         ) : campaigns.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {campaigns.map((campaign) => {
-              const ref = searchParams.get("ref");
-              const rid = searchParams.get("rid");
-              const hotelQuery = ref && rid ? `?ref=${encodeURIComponent(ref)}&rid=${encodeURIComponent(rid)}` : "";
-              return (
+            {campaigns.map((campaign) => (
               <CampaignCard
                 key={campaign.id}
                 campaign={campaign as any}
                 categories={categories}
-                hotelQuery={hotelQuery}
               />
-              );
-            })}
+            ))}
           </div>
         ) : (
           <div className="rounded-2xl border border-gray-100 bg-white py-16 text-center shadow-sm">

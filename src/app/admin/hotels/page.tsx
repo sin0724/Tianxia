@@ -19,7 +19,7 @@ export default async function AdminHotelsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">호텔 파트너 관리</h1>
           <p className="text-sm text-gray-500">
-            제휴 호텔을 등록하고 QR 코드를 관리합니다
+            제휴 호텔을 등록하고 추천인 코드를 관리합니다
           </p>
         </div>
         <Link href="/admin/hotels/new">

@@ -16,8 +16,6 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 function LoginForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
-  const ref = searchParams.get("ref") || "";
-  const rid = searchParams.get("rid") || "";
   const [isLoading, setIsLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +177,7 @@ function LoginForm() {
         <p className="text-center text-sm text-gray-500">
           還沒有帳戶？{" "}
           <Link
-            href={`/signup?redirect=${encodeURIComponent(redirect)}${ref && rid ? `&ref=${encodeURIComponent(ref)}&rid=${encodeURIComponent(rid)}` : ""}`}
+            href={`/signup?redirect=${encodeURIComponent(redirect)}`}
             className="font-medium text-primary hover:underline"
           >
             立即註冊

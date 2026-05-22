@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Pencil, ArrowLeft } from "lucide-react";
-import { HotelDetailQR } from "@/components/admin/hotels/hotel-detail-qr";
+import { CopyCodeButton } from "@/components/admin/hotels/copy-code-button";
 import { getRegionLabel } from "@/constants/regions";
 import { formatDate } from "@/lib/utils";
 import type { ApplicationStatus } from "@/types/database";
@@ -79,7 +79,7 @@ export default async function HotelDetailPage({ params }: PageProps) {
       .limit(30),
   ]);
 
-  // 유입 가입자 프로필 조회
+  // 추천인 가입자 프로필 조회
   const referralUserIds = referralsRaw?.map((r) => r.user_id) ?? [];
   const { data: referralProfiles } = referralUserIds.length
     ? await supabase
@@ -152,7 +152,7 @@ export default async function HotelDetailPage({ params }: PageProps) {
       {/* 통계 카드 */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "유입 회원", value: referralCount ?? 0, unit: "명" },
+          { label: "추천인 가입", value: referralCount ?? 0, unit: "명" },
           { label: "신청", value: applicationCount ?? 0, unit: "건" },
           { label: "방문 완료", value: completedCount ?? 0, unit: "건" },
           {
@@ -179,7 +179,7 @@ export default async function HotelDetailPage({ params }: PageProps) {
           <h3 className="mb-4 font-semibold text-gray-900">기본 정보</h3>
           <dl className="space-y-3 text-sm">
             <div className="flex gap-3">
-              <dt className="w-24 shrink-0 text-gray-400">파트너 코드</dt>
+              <dt className="w-24 shrink-0 text-gray-400">추천인 코드</dt>
               <dd className="font-mono font-medium text-blue-700">
                 {hotel.partner_code}
               </dd>
@@ -235,11 +235,23 @@ export default async function HotelDetailPage({ params }: PageProps) {
           </dl>
         </div>
 
-        {/* QR 코드 */}
-        <HotelDetailQR
-          hotelName={hotel.name}
-          partnerCode={hotel.partner_code}
-        />
+        {/* 추천인 코드 안내 */}
+        <div className="rounded-xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 font-semibold text-gray-900">추천인 코드 안내</h3>
+          <p className="mb-4 text-sm text-gray-500">
+            이 코드를 호텔에 전달하세요. 가입자가 회원가입 시 추천인 코드를 입력하면
+            이 호텔의 추천인으로 자동 등록됩니다.
+          </p>
+          <div className="flex items-center gap-3 rounded-xl bg-blue-50 px-5 py-4">
+            <span className="flex-1 font-mono text-2xl font-bold tracking-widest text-blue-700">
+              {hotel.partner_code}
+            </span>
+            <CopyCodeButton code={hotel.partner_code} />
+          </div>
+          <p className="mt-3 text-xs text-gray-400">
+            가입 페이지 URL: <span className="font-mono">tianxia.com/signup</span>
+          </p>
+        </div>
       </div>
 
       {/* 정산 내역 */}
@@ -300,10 +312,10 @@ export default async function HotelDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* QR 유입 가입자 목록 */}
+      {/* 추천인 가입자 목록 */}
       <div className="rounded-xl bg-white p-6 shadow-sm">
         <h3 className="mb-4 font-semibold text-gray-900">
-          QR 유입 가입자{" "}
+          추천인 가입자{" "}
           <span className="ml-1 text-sm font-normal text-gray-400">
             ({referralCount ?? 0}명)
           </span>
@@ -357,7 +369,7 @@ export default async function HotelDetailPage({ params }: PageProps) {
           </div>
         ) : (
           <p className="py-8 text-center text-sm text-gray-400">
-            QR 유입 가입자가 없습니다
+            추천인 코드로 가입한 회원이 없습니다
           </p>
         )}
       </div>
