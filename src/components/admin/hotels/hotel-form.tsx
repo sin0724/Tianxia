@@ -230,8 +230,13 @@ export function HotelForm({ hotel }: HotelFormProps) {
               <Input
                 id="partner_code"
                 {...form.register("partner_code")}
-                className="font-mono uppercase tracking-widest"
+                className="font-mono tracking-widest"
                 placeholder="예: LOTTESEOUL"
+                onChange={(e) =>
+                  form.setValue("partner_code", e.target.value.toUpperCase(), {
+                    shouldValidate: true,
+                  })
+                }
               />
             </div>
             {form.formState.errors.partner_code && (

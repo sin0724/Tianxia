@@ -110,17 +110,21 @@ function SignupForm() {
 
     // 추천인 코드 입력 시 호텔 유입 기록
     if (referralCode.trim()) {
-      try {
-        await fetch("/api/hotel-referral", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: authData.user.id,
-            referralCode: referralCode.trim(),
-          }),
-        });
-      } catch {
-        // 가입 자체는 성공 - 유입 기록 실패는 무시
+      const res = await fetch("/api/hotel-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: authData.user.id,
+          referralCode: referralCode.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (body.error === "유효하지 않은 추천인 코드입니다") {
+          setError("推薦人代碼無效，請確認後重試。（帳戶已建立成功）");
+          setIsLoading(false);
+          return;
+        }
       }
     }
 

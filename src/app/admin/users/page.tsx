@@ -22,13 +22,19 @@ interface UserProfile {
   youtube_url: string | null;
   dcard_url: string | null;
   created_at: string;
+  first_hotel_code: string | null;
+  first_hotel_partner_id: string | null;
+  referred_at: string | null;
 }
+
+type ReferralFilter = "all" | "referred" | "organic";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("all");
+  const [referralFilter, setReferralFilter] = useState<ReferralFilter>("all");
 
   const supabase = createClient();
 
@@ -37,7 +43,7 @@ export default function AdminUsersPage() {
       setLoading(true);
       const { data } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, email, name, line_id, region, instagram_handle, instagram_url, threads_url, facebook_url, youtube_url, dcard_url, created_at, first_hotel_code, first_hotel_partner_id, referred_at")
         .eq("role", "user")
         .order("created_at", { ascending: false });
 
@@ -51,6 +57,12 @@ export default function AdminUsersPage() {
   const filteredUsers = useMemo(() => {
     let filtered = users;
 
+    if (referralFilter === "referred") {
+      filtered = filtered.filter((u) => !!u.first_hotel_code);
+    } else if (referralFilter === "organic") {
+      filtered = filtered.filter((u) => !u.first_hotel_code);
+    }
+
     if (selectedRegion !== "all") {
       filtered = filtered.filter((u) => u.region === selectedRegion);
     }
@@ -62,17 +74,19 @@ export default function AdminUsersPage() {
         const email = u.email?.toLowerCase() || "";
         const instagram = u.instagram_handle?.toLowerCase() || "";
         const lineId = u.line_id?.toLowerCase() || "";
+        const hotelCode = u.first_hotel_code?.toLowerCase() || "";
         return (
           name.includes(q) ||
           email.includes(q) ||
           instagram.includes(q) ||
-          lineId.includes(q)
+          lineId.includes(q) ||
+          hotelCode.includes(q)
         );
       });
     }
 
     return filtered;
-  }, [users, searchQuery, selectedRegion]);
+  }, [users, searchQuery, selectedRegion, referralFilter]);
 
   const regionCounts = useMemo(() => {
     const counts: Record<string, number> = { all: users.length };
@@ -81,6 +95,12 @@ export default function AdminUsersPage() {
     });
     return counts;
   }, [users]);
+
+  const referralCounts = useMemo(() => ({
+    all: users.length,
+    referred: users.filter((u) => !!u.first_hotel_code).length,
+    organic: users.filter((u) => !u.first_hotel_code).length,
+  }), [users]);
 
   const REGION_TABS = [
     { value: "all", label: "전체" },
@@ -105,6 +125,34 @@ export default function AdminUsersPage() {
         <p className="text-muted-foreground">
           플랫폼에 가입한 회원을 조회합니다
         </p>
+      </div>
+
+      {/* 추천인 여부 필터 */}
+      <div className="flex gap-2">
+        {(
+          [
+            { value: "all", label: "전체" },
+            { value: "referred", label: "추천인 가입" },
+            { value: "organic", label: "일반 가입" },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setReferralFilter(tab.value)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+              referralFilter === tab.value
+                ? tab.value === "referred"
+                  ? "bg-blue-600 text-white"
+                  : "bg-primary text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {tab.label}
+            <span className="ml-1.5 rounded-full bg-white/20 px-1.5 py-0.5 text-xs">
+              {referralCounts[tab.value]}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* 지역 필터 */}
@@ -133,7 +181,7 @@ export default function AdminUsersPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
-          placeholder="이름, 이메일, 인스타그램, LINE ID로 검색..."
+          placeholder="이름, 이메일, 인스타그램, LINE ID, 추천인코드로 검색..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -153,11 +201,20 @@ export default function AdminUsersPage() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold">{user.name}</h3>
                       <Badge variant="outline">
                         {getRegionLabel(user.region, "ko")}
                       </Badge>
+                      {user.first_hotel_code ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                          🏨 {user.first_hotel_code}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-400">
+                          일반 가입
+                        </span>
+                      )}
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p>이메일: {user.email}</p>
@@ -220,6 +277,11 @@ export default function AdminUsersPage() {
                   <div className="text-right text-sm text-muted-foreground">
                     <p>가입일</p>
                     <p>{formatDate(user.created_at, "ko")}</p>
+                    {user.referred_at && (
+                      <p className="mt-1 text-xs text-blue-500">
+                        추천인 등록
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -230,7 +292,7 @@ export default function AdminUsersPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
-              {searchQuery || selectedRegion !== "all"
+              {searchQuery || selectedRegion !== "all" || referralFilter !== "all"
                 ? "검색 결과가 없습니다"
                 : "등록된 회원이 없습니다"}
             </p>

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  await Promise.all([
+  const [profileResult, referralResult] = await Promise.all([
     admin.from("profiles").update({
       first_hotel_partner_id: hotel.id,
       first_hotel_code: hotel.partner_code,
@@ -59,6 +59,13 @@ export async function POST(request: NextRequest) {
       user_id: userId,
     }),
   ]);
+
+  if (profileResult.error || referralResult.error) {
+    return NextResponse.json(
+      { error: profileResult.error?.message ?? referralResult.error?.message },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }
