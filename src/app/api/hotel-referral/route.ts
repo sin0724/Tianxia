@@ -18,15 +18,18 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
 
-  // 추천인 코드로 활성 호텔 파트너 조회
+  // 추천인 코드로 호텔 파트너 조회 (대소문자 구분 없이)
   const { data: hotel } = await admin
     .from("hotel_partners")
-    .select("id, partner_code")
-    .eq("partner_code", referralCode)
-    .eq("status", "active")
+    .select("id, partner_code, status")
+    .ilike("partner_code", referralCode)
     .single();
 
   if (!hotel) {
+    return NextResponse.json({ error: "유효하지 않은 추천인 코드입니다" }, { status: 404 });
+  }
+
+  if (hotel.status !== "active") {
     return NextResponse.json({ error: "유효하지 않은 추천인 코드입니다" }, { status: 404 });
   }
 
