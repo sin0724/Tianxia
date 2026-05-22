@@ -58,7 +58,10 @@ export function DeliveryAddressForm({
 
     const { error: insertError } = await supabase
       .from("delivery_addresses")
-      .insert({ ...data, application_id: applicationId });
+      .upsert(
+        { ...data, application_id: applicationId },
+        { onConflict: "application_id" }
+      );
 
     if (insertError) {
       toast({ title: "提交失敗", description: insertError.message, variant: "destructive" });

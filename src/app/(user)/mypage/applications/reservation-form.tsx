@@ -48,15 +48,18 @@ export function ReservationForm({
 
     const { error: insertError } = await supabase
       .from("reservation_info")
-      .insert({
-        application_id: applicationId,
-        visitor_name: data.visitor_name,
-        reservation_datetime: confirmedDate,
-        emergency_contact: data.emergency_contact,
-        line_id: data.line_id || null,
-        selected_service: data.selected_service || null,
-        special_requests: data.special_requests || null,
-      });
+      .upsert(
+        {
+          application_id: applicationId,
+          visitor_name: data.visitor_name,
+          reservation_datetime: confirmedDate,
+          emergency_contact: data.emergency_contact,
+          line_id: data.line_id || null,
+          selected_service: data.selected_service || null,
+          special_requests: data.special_requests || null,
+        },
+        { onConflict: "application_id" }
+      );
 
     if (insertError) {
       toast({ title: "發生錯誤", description: insertError.message, variant: "destructive" });

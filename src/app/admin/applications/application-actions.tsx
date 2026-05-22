@@ -72,10 +72,13 @@ export function ApplicationActions({
     }
 
     if (extra && Object.keys(extra).length > 0) {
+      // upsert: schedule_proposals 행이 없는 경우(stuck 건)에도 confirmed_date 저장
       const { error: extraError } = await supabase
         .from("schedule_proposals")
-        .update(extra)
-        .eq("application_id", applicationId);
+        .upsert(
+          { application_id: applicationId, proposed_dates: [], ...extra },
+          { onConflict: "application_id" }
+        );
 
       if (extraError) {
         toast({ title: "오류 발생", description: extraError.message, variant: "destructive" });
@@ -189,26 +192,44 @@ export function ApplicationActions({
     );
   }
 
-  // 2단계: schedule_proposed → 관리자가 정확한 날짜+시간 직접 입력
-  if (status === "schedule_proposed") {
+  // 2단계: schedule_proposed 또는 approved + scheduleProposal 존재 (이전 RLS 버그로 stuck된 건)
+  if (status === "schedule_proposed" || (status === "approved" && scheduleProposal)) {
+    const selectDate = (date: string) => {
+      // YYYY-MM-DD → datetime-local 기본값 (시간 00:00)
+      setSelectedDate(date + "T00:00");
+    };
+
     return (
       <div className="space-y-3 rounded-md border bg-blue-50 p-4">
         <p className="text-sm font-semibold text-blue-800">
           <Calendar className="mr-1 inline h-4 w-4" />
           일정 확정 (날짜·시간 직접 입력)
+          {status === "approved" && (
+            <span className="ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">
+              일정 제안 수신됨
+            </span>
+          )}
         </p>
         {scheduleProposal && (
           <div className="rounded bg-blue-100 px-3 py-2">
-            <p className="mb-1 text-xs font-medium text-blue-700">유저 제안 날짜</p>
+            <p className="mb-1.5 text-xs font-medium text-blue-700">유저 제안 날짜 (클릭하면 자동 입력)</p>
             <div className="flex flex-wrap gap-1.5">
               {scheduleProposal.proposed_dates?.map((date, i) => (
-                <span key={i} className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => selectDate(date)}
+                  className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer"
+                >
                   {date}
-                </span>
+                </button>
               ))}
             </div>
             {scheduleProposal.preferred_time && (
               <p className="mt-1 text-xs text-blue-600">선호시간: {scheduleProposal.preferred_time}</p>
+            )}
+            {scheduleProposal.message && (
+              <p className="mt-1 text-xs text-blue-600">메시지: {scheduleProposal.message}</p>
             )}
           </div>
         )}
