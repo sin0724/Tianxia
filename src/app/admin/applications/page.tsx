@@ -309,7 +309,11 @@ export default function AdminApplicationsPage() {
                         <p className="text-blue-700">선호시간: {application.schedule_proposals.preferred_time}</p>
                       )}
                       {application.schedule_proposals.message && (
-                        application.schedule_proposals.message.startsWith("[일정변경]") ? (
+                        application.schedule_proposals.message.startsWith("[취소요청]") ? (
+                          <p className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
+                            🚫 취소 사유: {application.schedule_proposals.message.replace("[취소요청]", "").trim() || "사유 없음"}
+                          </p>
+                        ) : application.schedule_proposals.message.startsWith("[일정변경]") ? (
                           <p className="rounded bg-orange-100 px-2 py-1 text-xs text-orange-800">
                             변경 사유: {application.schedule_proposals.message.replace("[일정변경]", "").trim()}
                           </p>

@@ -3,11 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, CalendarDays, ClipboardList, FileText, BookOpen } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ExternalLink, CalendarDays, ClipboardList, FileText, BookOpen, X } from "lucide-react";
 import { ScheduleForm } from "./schedule-form";
 import { ReservationForm } from "./reservation-form";
 import { DeliveryAddressForm } from "./delivery-address-form";
 import { RescheduleForm } from "./reschedule-form";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import type { ApplicationStatus } from "@/types/database";
 
 interface ApplicationStepActionsProps {
@@ -38,6 +42,9 @@ export function ApplicationStepActions({
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showReservationForm, setShowReservationForm] = useState(false);
   const [showRescheduleForm, setShowRescheduleForm] = useState(false);
+  const [showCancellationForm, setShowCancellationForm] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
   const [guideRead, setGuideRead] = useState(false);
 
   useEffect(() => {
@@ -47,6 +54,78 @@ export function ApplicationStepActions({
   }, [applicationId]);
 
   const reload = () => window.location.reload();
+
+  const handleCancellationRequest = async () => {
+    setIsCancelling(true);
+    const supabase = createClient();
+    const reason = cancellationReason.trim();
+    const { error } = await supabase
+      .from("schedule_proposals")
+      .upsert(
+        {
+          application_id: applicationId,
+          proposed_dates: [],
+          message: `[취소요청] ${reason}`,
+          confirmed_date: null,
+        },
+        { onConflict: "application_id" }
+      );
+    if (error) {
+      toast({ title: "提交失敗", description: "請稍後再試", variant: "destructive" });
+      setIsCancelling(false);
+      return;
+    }
+    toast({ title: "取消申請已送出", description: "請等待管理員處理" });
+    setIsCancelling(false);
+    reload();
+  };
+
+  const cancellationForm = showCancellationForm ? (
+    <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-red-700">申請取消</p>
+        <button type="button" onClick={() => setShowCancellationForm(false)} className="text-gray-400 hover:text-gray-600">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <Textarea
+        value={cancellationReason}
+        onChange={(e) => setCancellationReason(e.target.value)}
+        placeholder="請輸入取消原因（選填）"
+        rows={2}
+        className="bg-white text-sm"
+      />
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={handleCancellationRequest}
+          disabled={isCancelling}
+          className="h-7 gap-1.5 px-2.5 text-xs"
+        >
+          {isCancelling ? <LoadingSpinner size="sm" /> : null}
+          確認取消申請
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setShowCancellationForm(false)}
+          disabled={isCancelling}
+          className="h-7 px-2.5 text-xs"
+        >
+          返回
+        </Button>
+      </div>
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={() => setShowCancellationForm(true)}
+      className="block text-xs text-gray-400 hover:text-red-500 underline underline-offset-2 transition-colors"
+    >
+      無法配合，取消此申請
+    </button>
+  );
 
   if (status === "approved") {
     if (isDelivery) {
@@ -152,6 +231,7 @@ export function ApplicationStepActions({
             >
               日程有變動，申請更改日程
             </button>
+            {cancellationForm}
           </div>
         )}
       </div>
@@ -187,6 +267,7 @@ export function ApplicationStepActions({
             >
               日程有變動，申請更改日程
             </button>
+            {cancellationForm}
           </>
         )}
       </div>

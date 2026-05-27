@@ -393,7 +393,37 @@ export function ApplicationActions({
     );
   }
 
-  // approved / scheduled / completed / rejected → 상태 변경 액션 없음, 삭제만 가능
+  // scheduled → 취소 요청 감지
+  if (status === "scheduled") {
+    const hasCancellationRequest = scheduleProposal?.message?.startsWith("[취소요청]");
+    if (hasCancellationRequest) {
+      const reason = scheduleProposal?.message?.replace("[취소요청]", "").trim() || "사유 없음";
+      return (
+        <div className="space-y-3 rounded-md border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-800">
+            🚫 취소 요청 접수
+          </p>
+          <p className="rounded bg-red-100 px-3 py-2 text-xs text-red-700">
+            취소 사유: {reason}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="destructive" onClick={() => updateStatus("rejected")} disabled={isLoading} className="gap-2">
+              {isLoading ? <LoadingSpinner size="sm" /> : <X className="h-4 w-4" />}
+              취소 확인 (반려 처리)
+            </Button>
+          </div>
+          {deleteButton}
+        </div>
+      );
+    }
+    return (
+      <div className="rounded-md border bg-muted/10 p-3">
+        {deleteButton}
+      </div>
+    );
+  }
+
+  // approved / completed / rejected → 상태 변경 액션 없음, 삭제만 가능
   return (
     <div className="rounded-md border bg-muted/10 p-3">
       {deleteButton}
