@@ -27,6 +27,13 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
   const [newDeadline, setNewDeadline] = useState(campaign.application_deadline);
   const [isLoading, setIsLoading] = useState(false);
 
+  const revalidate = (campaignId?: string) =>
+    fetch("/api/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(campaignId ? { campaignId } : {}),
+    });
+
   const handleClose = async () => {
     if (!confirm(`"${campaign.title_ko}" 캠페인을 마감하시겠습니까?\n마감하면 신청이 중단되지만 데이터는 유지됩니다.`)) {
       return;
@@ -46,6 +53,7 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
       return;
     }
 
+    await revalidate(campaign.id);
     router.refresh();
     setIsLoading(false);
   };
@@ -69,6 +77,7 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
       return;
     }
 
+    await revalidate(campaign.id);
     router.refresh();
     setShowDeleteModal(false);
   };
@@ -105,6 +114,7 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
       return;
     }
 
+    await revalidate(campaign.id);
     router.refresh();
     setShowExtendModal(false);
     setIsLoading(false);
