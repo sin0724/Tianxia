@@ -71,6 +71,9 @@ interface Application {
     title_ko: string;
     brand_name_ko: string;
     is_delivery: boolean;
+    campaign_type: "free" | "paid" | null;
+    payment_amount: number | null;
+    payment_display_type: "amount" | "negotiable" | "after_apply" | null;
   } | null;
   schedule_proposals: ScheduleProposal | null;
   reservation_info: ReservationInfo | null;
@@ -121,7 +124,7 @@ export default function AdminApplicationsPage() {
       .select(`
         *,
         profiles (id, name, email, instagram_handle, region),
-        campaigns (id, title_ko, brand_name_ko, is_delivery),
+        campaigns (id, title_ko, brand_name_ko, is_delivery, campaign_type, payment_amount, payment_display_type),
         schedule_proposals (proposed_dates, preferred_time, message, confirmed_date),
         reservation_info (visitor_name, visitor_count, reservation_datetime, emergency_contact, line_id, selected_service, special_requests),
         delivery_addresses (recipient_name, country, city_state, zipcode, address, mobile, email),
@@ -237,13 +240,31 @@ export default function AdminApplicationsPage() {
               <Card key={application.id}>
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        {campaign?.brand_name_ko || "알 수 없음"} - {campaign?.title_ko || "알 수 없음"}
-                      </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground">
+                          {campaign?.brand_name_ko || "알 수 없음"} - {campaign?.title_ko || "알 수 없음"}
+                        </p>
+                        {campaign?.campaign_type === "paid" ? (
+                          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                            유료합작
+                            {campaign.payment_display_type === "amount" && campaign.payment_amount != null
+                              ? ` NT$${campaign.payment_amount.toLocaleString()}`
+                              : campaign.payment_display_type === "negotiable"
+                              ? " (협의)"
+                              : campaign.payment_display_type === "after_apply"
+                              ? " (신청 후 협의)"
+                              : ""}
+                          </span>
+                        ) : campaign?.campaign_type === "free" ? (
+                          <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-700">
+                            무료합작
+                          </span>
+                        ) : null}
+                      </div>
                       <CardTitle className="text-lg">{profile?.name || "알 수 없음"}</CardTitle>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${config.color}`}>
+                    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${config.color}`}>
                       {config.label}
                     </span>
                   </div>
