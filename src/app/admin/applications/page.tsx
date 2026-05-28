@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
-import { Search } from "lucide-react";
+import { Search, Copy, Check, ExternalLink } from "lucide-react";
 import { ApplicationActions } from "./application-actions";
 import type { ApplicationStatus } from "@/types/database";
 
@@ -108,6 +108,50 @@ const STATUS_TABS: { value: StatusFilter; label: string }[] = [
   { value: "completed",          label: "완료" },
   { value: "rejected",           label: "반려" },
 ];
+
+function SocialUrlRow({ label, url }: { label: string; url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const displayText = url.replace(/^https?:\/\/(www\.)?/, "").replace(/\?.*$/, "");
+
+  return (
+    <div className="flex items-center gap-1.5 text-sm">
+      <span className="w-20 shrink-0 text-muted-foreground">{label}</span>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="max-w-[280px] truncate text-primary hover:underline"
+        title={url}
+      >
+        {displayText}
+      </a>
+      <button
+        onClick={handleCopy}
+        className="ml-1 rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+        title="URL 복사"
+      >
+        {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+        title="새 탭에서 열기"
+      >
+        <ExternalLink className="h-3.5 w-3.5" />
+      </a>
+    </div>
+  );
+}
 
 export default function AdminApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -284,19 +328,19 @@ export default function AdminApplicationsPage() {
                     </div>
                   )}
 
-                  <div className="space-y-1 text-sm">
-                    <a href={application.applied_instagram_url} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline">
-                      Instagram: {application.applied_instagram_url}
-                    </a>
+                  <div className="space-y-1.5">
+                    <SocialUrlRow label="Instagram" url={application.applied_instagram_url} />
                     {application.applied_threads_url && (
-                      <a href={application.applied_threads_url} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline">
-                        Threads: {application.applied_threads_url}
-                      </a>
+                      <SocialUrlRow label="Threads" url={application.applied_threads_url} />
                     )}
                     {application.applied_youtube_url && (
-                      <a href={application.applied_youtube_url} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline">
-                        YouTube: {application.applied_youtube_url}
-                      </a>
+                      <SocialUrlRow label="YouTube" url={application.applied_youtube_url} />
+                    )}
+                    {application.applied_facebook_url && (
+                      <SocialUrlRow label="Facebook" url={application.applied_facebook_url} />
+                    )}
+                    {application.applied_dcard_url && (
+                      <SocialUrlRow label="Dcard" url={application.applied_dcard_url} />
                     )}
                   </div>
 
