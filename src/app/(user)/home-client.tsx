@@ -129,7 +129,13 @@ export function HomeClient({
     );
 
     if (selectedRegion !== "all") {
-      filtered = filtered.filter((c) => c.region === selectedRegion);
+      if (selectedRegion === "other") {
+        filtered = filtered.filter(
+          (c) => c.region !== "seoul" && c.region !== "busan" && c.region !== "jeju"
+        );
+      } else {
+        filtered = filtered.filter((c) => c.region === selectedRegion);
+      }
     }
 
     if (selectedType === "premium") {
