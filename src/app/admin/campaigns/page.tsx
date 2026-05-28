@@ -137,6 +137,7 @@ export default async function AdminCampaignsPage({ searchParams }: PageProps) {
                     id: campaign.id,
                     title_ko: campaign.title_ko,
                     application_deadline: campaign.application_deadline,
+                    status: campaign.status as "draft" | "active" | "closed",
                   }}
                 />
               </div>

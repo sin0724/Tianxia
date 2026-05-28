@@ -6,13 +6,14 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, CalendarPlus, Pencil } from "lucide-react";
+import { Trash2, CalendarPlus, Pencil, XCircle } from "lucide-react";
 import Link from "next/link";
 
 interface Campaign {
   id: string;
   title_ko: string;
   application_deadline: string;
+  status: "draft" | "active" | "closed";
 }
 
 interface CampaignActionsProps {
@@ -25,6 +26,29 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [newDeadline, setNewDeadline] = useState(campaign.application_deadline);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleClose = async () => {
+    if (!confirm(`"${campaign.title_ko}" 캠페인을 마감하시겠습니까?\n마감하면 신청이 중단되지만 데이터는 유지됩니다.`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("campaigns")
+      .update({ status: "closed" })
+      .eq("id", campaign.id);
+
+    if (error) {
+      alert("마감 처리 중 오류가 발생했습니다: " + error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    router.refresh();
+    setIsLoading(false);
+  };
 
   const handleDelete = async () => {
     if (!confirm("정말 이 캠페인을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
@@ -105,6 +129,18 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
           <CalendarPlus className="h-4 w-4" />
           연장
         </Button>
+        {campaign.status !== "closed" && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 rounded-lg text-orange-600 hover:text-orange-700"
+            onClick={handleClose}
+            disabled={isLoading}
+          >
+            <XCircle className="h-4 w-4" />
+            마감
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
