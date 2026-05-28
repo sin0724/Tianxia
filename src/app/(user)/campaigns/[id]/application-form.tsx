@@ -71,6 +71,12 @@ export function ApplicationForm({ campaignId, userProfile }: ApplicationFormProp
       return;
     }
 
+    fetch("/api/revalidate-campaign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ campaignId }),
+    });
+
     setIsSuccess(true);
     setIsLoading(false);
   };
