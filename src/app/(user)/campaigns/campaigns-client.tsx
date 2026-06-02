@@ -37,6 +37,7 @@ interface CampaignWithCount {
   campaign_type: "free" | "paid";
   payment_amount: number | null;
   min_followers: number | null;
+  created_at: string;
 }
 
 type SortOption = "popular" | "deadline" | "latest";
@@ -78,49 +79,20 @@ export default function CampaignsClient() {
       setCampaigns([]);
     }
 
-    let query = supabase
-      .from("campaigns")
-      .select(`*, applications(count)`)
-      .eq("status", "active")
-      .gte("application_deadline", new Date().toISOString());
+    const params = new URLSearchParams();
+    if (selectedCategory && selectedCategory !== "all") params.set("category", selectedCategory);
+    if (selectedRegion && selectedRegion !== "all") params.set("region", selectedRegion);
+    if (selectedPlatform && selectedPlatform !== "all") params.set("platform", selectedPlatform);
+    if (searchQuery) params.set("q", searchQuery);
 
-    // Category filter
-    if (selectedCategory && selectedCategory !== "all") {
-      query = query.eq("category", selectedCategory);
-    }
-
-    // Region filter
-    if (selectedRegion && selectedRegion !== "all") {
-      query = query.eq("region", selectedRegion);
-    }
-
-    // Platform filter
-    if (selectedPlatform && selectedPlatform !== "all") {
-      query = query.contains("platforms", [selectedPlatform]);
-    }
-
-    // Search filter
-    if (searchQuery) {
-      query = query.or(`title_ko.ilike.%${searchQuery}%,title_zh_tw.ilike.%${searchQuery}%,brand_name_ko.ilike.%${searchQuery}%,brand_name_zh_tw.ilike.%${searchQuery}%`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Error fetching campaigns:", error);
+    const res = await fetch(`/api/campaigns?${params.toString()}`);
+    if (!res.ok) {
       setLoading(false);
       setLoadingMore(false);
       return;
     }
 
-    let processedCampaigns = (data || []).map((campaign) => ({
-      ...campaign,
-      application_count: (campaign as any).applications?.[0]?.count ?? 0,
-      bonus_application_count: campaign.bonus_application_count ?? 0,
-      campaign_type: (campaign as any).campaign_type ?? "free",
-      payment_amount: (campaign as any).payment_amount ?? null,
-      min_followers: (campaign as any).min_followers ?? null,
-    }));
+    let processedCampaigns: CampaignWithCount[] = await res.json();
 
     // Campaign type filter (유료/무료)
     if (selectedCampaignType !== "all") {
