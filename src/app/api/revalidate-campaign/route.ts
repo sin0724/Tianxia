@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const campaignId = body?.campaignId as string | undefined;
 
-  revalidateTag("home-data", "default");
+  revalidateTag("home-data");
   revalidatePath("/");
   revalidatePath("/campaigns");
 

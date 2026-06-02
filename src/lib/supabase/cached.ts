@@ -1,20 +1,12 @@
 import { unstable_cache } from "next/cache";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const HOME_CACHE_TAG = "home-data";
 
-// 공개 데이터 전용 클라이언트 — 쿠키/세션 없음, anon key만 사용
-// RLS 정책이 공개 데이터만 노출하므로 보안 이슈 없음
-function publicClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
-
 export const getCachedHomeData = unstable_cache(
   async () => {
-    const supabase = publicClient();
+    // 서비스 롤 클라이언트 사용: applications 테이블 RLS를 우회해 신청자 수를 정확히 집계
+    const supabase = createAdminClient();
 
     const [bannersRes, categoriesRes, campaignsRes] = await Promise.all([
       supabase

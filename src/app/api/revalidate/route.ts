@@ -23,8 +23,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const campaignId = body?.campaignId as string | undefined;
 
-  // 캐시 태그로 홈 데이터 즉시 무효화 (Next.js 16 - profile 인자 필요)
-  revalidateTag("home-data", "default");
+  revalidateTag("home-data");
   revalidatePath("/");
   revalidatePath("/campaigns");
 
