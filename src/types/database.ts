@@ -267,7 +267,8 @@ export type Database = {
         Row: {
           id: string;
           application_id: string;
-          visitor_name: string;
+          passport_name: string;
+          date_of_birth: string;
           visitor_count: number;
           reservation_datetime: string;
           emergency_contact: string;
@@ -280,7 +281,8 @@ export type Database = {
         Insert: {
           id?: string;
           application_id: string;
-          visitor_name: string;
+          passport_name: string;
+          date_of_birth: string;
           visitor_count?: number;
           reservation_datetime: string;
           emergency_contact: string;
@@ -293,7 +295,8 @@ export type Database = {
         Update: {
           id?: string;
           application_id?: string;
-          visitor_name?: string;
+          passport_name?: string;
+          date_of_birth?: string;
           visitor_count?: number;
           reservation_datetime?: string;
           emergency_contact?: string;

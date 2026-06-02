@@ -36,7 +36,8 @@ export function ReservationForm({
     resolver: zodResolver(reservationInfoSchema),
     defaultValues: {
       application_id: applicationId,
-      visitor_name: userName || "",
+      passport_name: "",
+      date_of_birth: "",
       visitor_count: 1,
       line_id: userLineId || "",
       reservation_datetime: confirmedDate,
@@ -52,7 +53,8 @@ export function ReservationForm({
       .upsert(
         {
           application_id: applicationId,
-          visitor_name: data.visitor_name,
+          passport_name: data.passport_name,
+          date_of_birth: data.date_of_birth,
           visitor_count: data.visitor_count,
           reservation_datetime: confirmedDate,
           emergency_contact: data.emergency_contact,
@@ -101,23 +103,39 @@ export function ReservationForm({
         </div>
       </div>
 
-      {/* 1. 姓名（中文） */}
+      {/* 1. 護照英文姓名 */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-sm font-medium">
           <User className="h-3.5 w-3.5 text-gray-500" />
-          姓名（中文）<span className="text-red-500">*</span>
+          護照英文姓名<span className="text-red-500">*</span>
         </Label>
         <Input
-          {...register("visitor_name")}
-          placeholder="請輸入您的中文姓名"
-          className="bg-white"
+          {...register("passport_name")}
+          placeholder="請輸入護照上的英文姓名（如：HONG GILDONG）"
+          className="bg-white uppercase"
         />
-        {errors.visitor_name && (
-          <p className="text-xs text-red-500">{errors.visitor_name.message}</p>
+        {errors.passport_name && (
+          <p className="text-xs text-red-500">{errors.passport_name.message}</p>
         )}
       </div>
 
-      {/* 2. 方문 인원 */}
+      {/* 2. 出生日期 */}
+      <div className="space-y-1.5">
+        <Label className="flex items-center gap-1.5 text-sm font-medium">
+          <Calendar className="h-3.5 w-3.5 text-gray-500" />
+          出生日期<span className="text-red-500">*</span>
+        </Label>
+        <Input
+          {...register("date_of_birth")}
+          type="date"
+          className="bg-white"
+        />
+        {errors.date_of_birth && (
+          <p className="text-xs text-red-500">{errors.date_of_birth.message}</p>
+        )}
+      </div>
+
+      {/* 3. 方문 인원 */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-sm font-medium">
           <Users className="h-3.5 w-3.5 text-gray-500" />
@@ -138,7 +156,7 @@ export function ReservationForm({
         )}
       </div>
 
-      {/* 3. 緊急聯絡方式 */}
+      {/* 4. 緊急聯絡方式 */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-sm font-medium">
           <Phone className="h-3.5 w-3.5 text-gray-500" />
@@ -154,7 +172,7 @@ export function ReservationForm({
         )}
       </div>
 
-      {/* 4. LINE ID */}
+      {/* 5. LINE ID */}
       <div className="space-y-1.5">
         <Label className="text-sm font-medium">LINE ID</Label>
         <Input
@@ -164,7 +182,7 @@ export function ReservationForm({
         />
       </div>
 
-      {/* 5. 서비스 선택 (옵션이 있는 캠페인만 표시) */}
+      {/* 6. 서비스 선택 (옵션이 있는 캠페인만 표시) */}
       {serviceOptions && serviceOptions.length > 0 && (
         <div className="space-y-1.5">
           <Label className="flex items-center gap-1.5 text-sm font-medium">
@@ -185,7 +203,7 @@ export function ReservationForm({
         </div>
       )}
 
-      {/* 6. 其他備註 */}
+      {/* 7. 其他備註 */}
       <div className="space-y-1.5">
         <Label className="flex items-center gap-1.5 text-sm font-medium">
           <MessageSquare className="h-3.5 w-3.5 text-gray-500" />

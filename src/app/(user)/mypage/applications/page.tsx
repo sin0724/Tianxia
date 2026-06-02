@@ -50,7 +50,7 @@ export default async function MyApplicationsPage() {
         proposed_dates, preferred_time, message, confirmed_date
       ),
       reservation_info (
-        visitor_name, reservation_datetime, emergency_contact, line_id, selected_service, special_requests
+        passport_name, date_of_birth, reservation_datetime, emergency_contact, line_id, selected_service, special_requests
       ),
       delivery_addresses (
         recipient_name, country, city_state, zipcode, address, mobile, email
@@ -106,8 +106,8 @@ export default async function MyApplicationsPage() {
               : application.schedule_proposals;
 
             const reservationInfo = Array.isArray(application.reservation_info)
-              ? (application.reservation_info[0] as { visitor_name: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; selected_service: string | null; special_requests: string | null } | undefined)
-              : application.reservation_info as { visitor_name: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; selected_service: string | null; special_requests: string | null } | null;
+              ? (application.reservation_info[0] as { passport_name: string; date_of_birth: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; selected_service: string | null; special_requests: string | null } | undefined)
+              : application.reservation_info as { passport_name: string; date_of_birth: string; reservation_datetime: string; emergency_contact: string; line_id: string | null; selected_service: string | null; special_requests: string | null } | null;
 
             const rawOpts = campaign.service_options_zh_tw || campaign.service_options;
             const serviceOptions = rawOpts
@@ -176,7 +176,8 @@ export default async function MyApplicationsPage() {
                     <div className="rounded-md bg-green-50 p-3 text-sm">
                       <p className="font-medium text-green-800">預約資訊</p>
                       <div className="mt-1 grid grid-cols-2 gap-1 text-green-700">
-                        <span>姓名：{reservationInfo.visitor_name}</span>
+                        <span>護照英文姓名：{reservationInfo.passport_name}</span>
+                        <span>出生日期：{reservationInfo.date_of_birth}</span>
                         <span>日期時間：{reservationInfo.reservation_datetime}</span>
                         <span>緊急聯絡：{reservationInfo.emergency_contact}</span>
                         {reservationInfo.line_id && <span>LINE：{reservationInfo.line_id}</span>}

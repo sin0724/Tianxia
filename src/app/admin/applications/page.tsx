@@ -18,7 +18,8 @@ interface ScheduleProposal {
 }
 
 interface ReservationInfo {
-  visitor_name: string;
+  passport_name: string;
+  date_of_birth: string;
   visitor_count: number;
   reservation_datetime: string;
   emergency_contact: string;
@@ -170,7 +171,7 @@ export default function AdminApplicationsPage() {
         profiles (id, name, email, instagram_handle, region),
         campaigns (id, title_ko, brand_name_ko, is_delivery, campaign_type, payment_amount, payment_display_type),
         schedule_proposals (proposed_dates, preferred_time, message, confirmed_date),
-        reservation_info (visitor_name, visitor_count, reservation_datetime, emergency_contact, line_id, selected_service, special_requests),
+        reservation_info (passport_name, date_of_birth, visitor_count, reservation_datetime, emergency_contact, line_id, selected_service, special_requests),
         delivery_addresses (recipient_name, country, city_state, zipcode, address, mobile, email),
         reviews (id, review_url, content, visited_at, submitted_at, status)
       `)
@@ -395,7 +396,8 @@ export default function AdminApplicationsPage() {
                       <p className="font-medium text-green-800">예약 정보</p>
                       <div className="mt-1 space-y-1 text-green-700">
                         <div className="grid grid-cols-2 gap-1">
-                          <span>성명: {application.reservation_info.visitor_name}</span>
+                          <span>영문이름: {application.reservation_info.passport_name}</span>
+                          <span>생년월일: {application.reservation_info.date_of_birth}</span>
                           <span>방문인원: {application.reservation_info.visitor_count}명</span>
                           <span>일시: {application.reservation_info.reservation_datetime}</span>
                           <span>긴급연락: {application.reservation_info.emergency_contact}</span>
