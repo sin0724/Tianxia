@@ -164,7 +164,7 @@ export default function AdminApplicationsPage() {
 
   const fetchApplications = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("applications")
       .select(`
         *,
@@ -176,6 +176,10 @@ export default function AdminApplicationsPage() {
         reviews (id, review_url, content, visited_at, submitted_at, status)
       `)
       .order("applied_at", { ascending: false });
+
+    if (error) {
+      console.error("[AdminApplications] fetch error:", error.message, error);
+    }
 
     if (data) {
       setApplications(data.map((a) => ({
