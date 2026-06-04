@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, CalendarDays, ClipboardList, AlertCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { ApplicationStepActions } from "@/app/(user)/mypage/applications/application-step-actions";
 import type { ApplicationStatus } from "@/types/database";
@@ -55,7 +55,7 @@ type CampaignInfo = {
   service_options: string | null;
   service_options_zh_tw: string | null;
   is_delivery: boolean;
-};
+} | null;
 
 type ScheduleProposalData = {
   proposed_dates: string[];
@@ -170,23 +170,35 @@ function StepProgress({ status, isDelivery }: { status: ApplicationStatus; isDel
 function ApplicationCard({
   application,
   profile,
-  defaultExpanded,
 }: {
   application: ApplicationItem;
   profile: ApplicationsListClientProps["profile"];
-  defaultExpanded: boolean;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [expanded, setExpanded] = useState(false);
+  const [autoOpenForm, setAutoOpenForm] = useState(false);
 
   const campaign = application.campaigns;
+
+  // campaign이 null이면 데이터 오류 카드 표시
+  if (!campaign) {
+    return (
+      <Card className="border-red-100">
+        <CardContent className="flex items-center gap-3 p-4 text-sm text-red-500">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>活動資料載入失敗，請聯繫管理員</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const scheduleProposal = Array.isArray(application.schedule_proposals)
-    ? (application.schedule_proposals[0] as ScheduleProposalData) ?? null
+    ? ((application.schedule_proposals[0] as ScheduleProposalData) ?? null)
     : (application.schedule_proposals as ScheduleProposalData);
   const reservationInfo = Array.isArray(application.reservation_info)
-    ? (application.reservation_info[0] as ReservationInfoData) ?? null
+    ? ((application.reservation_info[0] as ReservationInfoData) ?? null)
     : (application.reservation_info as ReservationInfoData);
   const deliveryAddress = Array.isArray(application.delivery_addresses)
-    ? (application.delivery_addresses[0] as DeliveryAddressData) ?? null
+    ? ((application.delivery_addresses[0] as DeliveryAddressData) ?? null)
     : (application.delivery_addresses as DeliveryAddressData);
 
   const status = application.status;
@@ -198,10 +210,42 @@ function ApplicationCard({
     ? rawOpts.split("\n").map((s) => s.trim()).filter(Boolean)
     : undefined;
 
-  const reload = () => window.location.reload();
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAutoOpenForm(true);
+    setExpanded(true);
+  };
+
+  const getCompactActionButton = () => {
+    if (status === "approved") {
+      return (
+        <Button
+          size="sm"
+          className="mt-2 w-full gap-2 rounded-lg bg-blue-600 text-xs hover:bg-blue-700"
+          onClick={handleActionClick}
+        >
+          <CalendarDays className="h-3.5 w-3.5" />
+          {campaign.is_delivery ? "填寫收件資訊 →" : "提案到訪日期 →"}
+        </Button>
+      );
+    }
+    if (status === "scheduled") {
+      return (
+        <Button
+          size="sm"
+          className="mt-2 w-full gap-2 rounded-lg bg-green-600 text-xs hover:bg-green-700"
+          onClick={handleActionClick}
+        >
+          <ClipboardList className="h-3.5 w-3.5" />
+          填寫預約資訊 →
+        </Button>
+      );
+    }
+    return null;
+  };
 
   return (
-    <Card className={isActionRequired ? "ring-2 ring-amber-400 ring-offset-1" : ""}>
+    <Card className={isActionRequired ? "ring-2 ring-offset-1 ring-amber-400" : ""}>
       {/* Action needed banner */}
       {isActionRequired && (
         <div className="flex items-center gap-2 rounded-t-lg border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700">
@@ -213,10 +257,10 @@ function ApplicationCard({
         </div>
       )}
 
-      {/* Card header — always visible, tappable to expand */}
+      {/* Card header — tappable to expand */}
       <button
         type="button"
-        className="w-full px-4 pt-3 pb-2 text-left"
+        className="w-full px-4 pb-2 pt-3 text-left"
         onClick={() => setExpanded((v) => !v)}
       >
         <div className="flex items-start justify-between gap-2">
@@ -251,6 +295,13 @@ function ApplicationCard({
           <StepProgress status={status} isDelivery={campaign.is_delivery} />
         </div>
       </button>
+
+      {/* Compact action button — visible without expanding */}
+      {isActionRequired && !expanded && (
+        <div className="px-4 pb-3">
+          {getCompactActionButton()}
+        </div>
+      )}
 
       {/* Expanded content */}
       {expanded && (
@@ -334,6 +385,7 @@ function ApplicationCard({
             serviceOptions={serviceOptions}
             driveUrl={campaign.drive_url ?? undefined}
             isDelivery={campaign.is_delivery}
+            autoOpenForm={autoOpenForm}
           />
 
           {application.admin_note && (
@@ -352,7 +404,11 @@ export function ApplicationsListClient({
   applications,
   profile,
 }: ApplicationsListClientProps) {
-  const [activeTab, setActiveTab] = useState<TabFilter>("all");
+  const [activeTab, setActiveTab] = useState<TabFilter>("active");
+
+  const actionNeededCount = applications.filter(
+    (a) => a.status === "approved" || a.status === "scheduled"
+  ).length;
 
   const filtered = applications.filter((app) => {
     if (activeTab === "all") return true;
@@ -390,6 +446,26 @@ export function ApplicationsListClient({
 
   return (
     <div className="space-y-4">
+      {/* 액션 필요 요약 배너 */}
+      {actionNeededCount > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="relative flex h-5 w-5 shrink-0 mt-0.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+              {actionNeededCount}
+            </span>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800">
+              您有 {actionNeededCount} 個申請需要操作
+            </p>
+            <p className="mt-0.5 text-xs text-amber-700">
+              請點選下方「已選中」或「日程已確定」的申請，點擊藍色/綠色按鈕提交資訊
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Status Tab Filter */}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {(Object.keys(TAB_LABELS) as TabFilter[]).map((tab) => (
@@ -428,9 +504,6 @@ export function ApplicationsListClient({
               key={application.id}
               application={application}
               profile={profile}
-              defaultExpanded={
-                application.status === "approved" || application.status === "scheduled"
-              }
             />
           ))}
         </div>

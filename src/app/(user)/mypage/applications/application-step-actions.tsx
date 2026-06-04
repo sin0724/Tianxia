@@ -25,6 +25,7 @@ interface ApplicationStepActionsProps {
   serviceOptions?: string[];
   driveUrl?: string;
   isDelivery?: boolean;
+  autoOpenForm?: boolean;
 }
 
 export function ApplicationStepActions({
@@ -38,9 +39,10 @@ export function ApplicationStepActions({
   serviceOptions,
   driveUrl,
   isDelivery,
+  autoOpenForm = false,
 }: ApplicationStepActionsProps) {
-  const [showScheduleForm, setShowScheduleForm] = useState(false);
-  const [showReservationForm, setShowReservationForm] = useState(false);
+  const [showScheduleForm, setShowScheduleForm] = useState(autoOpenForm && (status === "approved"));
+  const [showReservationForm, setShowReservationForm] = useState(autoOpenForm && (status === "scheduled"));
   const [showRescheduleForm, setShowRescheduleForm] = useState(false);
   const [showCancellationForm, setShowCancellationForm] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
