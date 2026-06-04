@@ -10,6 +10,7 @@ import { formatDate, getDaysRemaining } from "@/lib/utils";
 import { getRegionLabel } from "@/constants/regions";
 import { PLATFORMS } from "@/constants/platforms";
 import { ApplicationForm } from "./application-form";
+import { MobileApplySheet } from "./mobile-apply-sheet";
 
 interface CampaignDetailPageProps {
   params: Promise<{ id: string }>;
@@ -182,36 +183,18 @@ export default async function CampaignDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(campaignJsonLd) }}
       />
-    <div className="container mx-auto px-4 py-8 pb-24 lg:pb-8">
-      {/* 모바일 고정 하단 CTA */}
-      <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-100 bg-white/95 backdrop-blur-sm px-4 py-3 lg:hidden">
-        <div className="flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-gray-900">{title}</p>
-            {!isDeadlinePassed && daysRemaining > 0 && daysRemaining <= 7 && (
-              <p className="text-xs text-red-500">⚡ 剩餘 {daysRemaining} 天截止</p>
-            )}
-            {!isDeadlinePassed && daysRemaining > 7 && (
-              <p className="text-xs text-gray-400">截止：{formatDate(campaign.application_deadline)}</p>
-            )}
-          </div>
-          {isDeadlinePassed ? (
-            <Button size="sm" disabled className="rounded-full px-5">已截止</Button>
-          ) : !user ? (
-            <Link href={`/login?redirect=/campaigns/${campaign.id}`}>
-              <Button size="sm" className="rounded-full px-5">登入申請</Button>
-            </Link>
-          ) : existingApplication ? (
-            <Link href="/mypage/applications">
-              <Button size="sm" variant="outline" className="rounded-full px-5">查看申請</Button>
-            </Link>
-          ) : (
-            <a href="#apply-section">
-              <Button size="sm" className="rounded-full px-5">立即申請 →</Button>
-            </a>
-          )}
-        </div>
-      </div>
+    <div className="container mx-auto px-4 pt-8 pb-36 lg:pb-8">
+      {/* 모바일 신청 바텀 시트 CTA */}
+      <MobileApplySheet
+        campaignId={campaign.id}
+        userProfile={userProfile}
+        campaignTitle={title}
+        applicationDeadline={campaign.application_deadline}
+        daysRemaining={daysRemaining}
+        isDeadlinePassed={isDeadlinePassed}
+        existingApplication={existingApplication}
+        isLoggedIn={!!user}
+      />
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Main Content */}

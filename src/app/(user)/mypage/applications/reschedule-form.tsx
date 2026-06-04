@@ -17,6 +17,14 @@ interface RescheduleFormProps {
   onCancel: () => void;
 }
 
+const REASON_CHIPS = [
+  "行程衝突",
+  "個人因素",
+  "緊急情況",
+  "健康問題",
+  "交通問題",
+];
+
 export function RescheduleForm({
   applicationId,
   currentConfirmedDate,
@@ -33,6 +41,12 @@ export function RescheduleForm({
     setDates(updated);
   };
 
+  const selectChip = (chip: string) => {
+    setReason((prev) =>
+      prev === chip ? "" : prev ? `${prev}、${chip}` : chip
+    );
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validDates = dates.filter(Boolean);
@@ -47,7 +61,6 @@ export function RescheduleForm({
 
     setIsLoading(true);
     const supabase = createClient();
-    const today = new Date().toISOString().split("T")[0];
 
     const { error: upsertError } = await supabase
       .from("schedule_proposals")
@@ -104,14 +117,34 @@ export function RescheduleForm({
         目前確定日程：<span className="font-semibold">{currentConfirmedDate}</span>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label className="text-sm">
           變更原因 <span className="text-red-500">*</span>
         </Label>
+        {/* 사유 선택 칩 */}
+        <div className="flex flex-wrap gap-1.5">
+          {REASON_CHIPS.map((chip) => {
+            const selected = reason.includes(chip);
+            return (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => selectChip(chip)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  selected
+                    ? "border-orange-400 bg-orange-400 text-white"
+                    : "border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+                }`}
+              >
+                {chip}
+              </button>
+            );
+          })}
+        </div>
         <Textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="請說明無法按原定日程到訪的原因..."
+          placeholder="可直接點選上方原因，或在此補充說明..."
           rows={2}
           className="bg-white text-sm"
           required
@@ -119,7 +152,9 @@ export function RescheduleForm({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-sm">新希望日期（最多3個）<span className="text-red-500">*</span></Label>
+        <Label className="text-sm">
+          新希望日期（最多3個）<span className="text-red-500">*</span>
+        </Label>
         {dates.map((date, i) => (
           <Input
             key={i}
@@ -133,7 +168,11 @@ export function RescheduleForm({
       </div>
 
       <div className="flex gap-2">
-        <Button type="submit" disabled={isLoading} className="gap-2 bg-orange-500 hover:bg-orange-600">
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="gap-2 bg-orange-500 hover:bg-orange-600"
+        >
           {isLoading ? <LoadingSpinner size="sm" /> : <CalendarDays className="h-4 w-4" />}
           送出變更申請
         </Button>
