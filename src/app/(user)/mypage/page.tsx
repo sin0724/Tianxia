@@ -37,6 +37,9 @@ export default async function MyPage() {
 
   const applicationCount = applicationStats?.length ?? 0;
   const approvedCount = applicationStats?.filter((a) => a.status === "approved").length ?? 0;
+  const actionNeededCount = applicationStats?.filter(
+    (a) => a.status === "approved" || a.status === "scheduled"
+  ).length ?? 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -52,10 +55,21 @@ export default async function MyPage() {
                   <p className="text-2xl font-bold text-gray-900">{applicationCount || 0}</p>
                   <p className="text-sm text-gray-500">總申請數</p>
                 </div>
-                <div className="rounded-xl bg-gray-50 p-4 text-center">
-                  <p className="text-2xl font-bold text-primary">{approvedCount || 0}</p>
-                  <p className="text-sm text-gray-500">已選中</p>
-                </div>
+                <Link href="/mypage/applications" className="block">
+                  <div className={`rounded-xl p-4 text-center transition-colors ${
+                    actionNeededCount > 0
+                      ? "bg-primary/10 ring-2 ring-primary/25 hover:bg-primary/15"
+                      : "bg-gray-50 hover:bg-gray-100"
+                  }`}>
+                    <p className="text-2xl font-bold text-primary">{approvedCount || 0}</p>
+                    <p className="text-sm text-gray-500">已選中</p>
+                    {actionNeededCount > 0 && (
+                      <p className="mt-1 text-[11px] font-semibold text-amber-600">
+                        ● {actionNeededCount}個待操作
+                      </p>
+                    )}
+                  </div>
+                </Link>
               </div>
             </div>
 

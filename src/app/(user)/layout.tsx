@@ -16,6 +16,16 @@ export default async function UserLayout({
 
   const userProp = user ? { id: user.id, email: user.email || "" } : null;
 
+  let actionCount = 0;
+  if (user) {
+    const { count } = await supabase
+      .from("applications")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .in("status", ["approved", "scheduled"]);
+    actionCount = count ?? 0;
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header user={userProp} />
@@ -23,7 +33,7 @@ export default async function UserLayout({
       <div className="pb-14 md:pb-0">
         <Footer />
       </div>
-      <BottomTabBar user={userProp} />
+      <BottomTabBar user={userProp} actionCount={actionCount} />
       {user && <OnboardingModal />}
     </div>
   );

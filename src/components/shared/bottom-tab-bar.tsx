@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 
 interface BottomTabBarProps {
   user: { id: string; email: string } | null;
+  actionCount?: number;
 }
 
-export function BottomTabBar({ user }: BottomTabBarProps) {
+export function BottomTabBar({ user, actionCount = 0 }: BottomTabBarProps) {
   const pathname = usePathname();
 
   const tabs = user
@@ -19,18 +20,21 @@ export function BottomTabBar({ user }: BottomTabBarProps) {
           label: "首頁",
           icon: Home,
           isActive: (p: string) => p === "/",
+          badge: false,
         },
         {
           href: "/campaigns",
           label: "體驗活動",
           icon: Compass,
           isActive: (p: string) => p.startsWith("/campaigns"),
+          badge: false,
         },
         {
           href: "/mypage/applications",
           label: "我的申請",
           icon: ClipboardList,
           isActive: (p: string) => p.startsWith("/mypage/applications"),
+          badge: true,
         },
         {
           href: "/mypage",
@@ -39,6 +43,7 @@ export function BottomTabBar({ user }: BottomTabBarProps) {
           isActive: (p: string) =>
             p === "/mypage" ||
             (p.startsWith("/mypage") && !p.startsWith("/mypage/applications")),
+          badge: false,
         },
       ]
     : [
@@ -47,12 +52,14 @@ export function BottomTabBar({ user }: BottomTabBarProps) {
           label: "首頁",
           icon: Home,
           isActive: (p: string) => p === "/",
+          badge: false,
         },
         {
           href: "/campaigns",
           label: "體驗活動",
           icon: Compass,
           isActive: (p: string) => p.startsWith("/campaigns"),
+          badge: false,
         },
         {
           href: "/login",
@@ -60,6 +67,7 @@ export function BottomTabBar({ user }: BottomTabBarProps) {
           icon: User,
           isActive: (p: string) =>
             p.startsWith("/login") || p.startsWith("/signup"),
+          badge: false,
         },
       ];
 
@@ -72,6 +80,8 @@ export function BottomTabBar({ user }: BottomTabBarProps) {
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = tab.isActive(pathname);
+          const showBadge = tab.badge && actionCount > 0;
+
           return (
             <Link
               key={tab.href}
@@ -81,7 +91,14 @@ export function BottomTabBar({ user }: BottomTabBarProps) {
                 active ? "text-primary" : "text-gray-400"
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              <div className="relative">
+                <Icon className="h-5 w-5 shrink-0" />
+                {showBadge && (
+                  <span className="absolute -right-2 -top-1.5 flex h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-bold leading-none text-white">
+                    {actionCount > 9 ? "9+" : actionCount}
+                  </span>
+                )}
+              </div>
               <span className="truncate">{tab.label}</span>
             </Link>
           );
