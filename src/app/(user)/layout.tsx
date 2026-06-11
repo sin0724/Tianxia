@@ -28,7 +28,7 @@ export default async function UserLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header user={userProp} />
+      <Header user={userProp} actionCount={actionCount} />
       <main className="flex-1 pb-14 md:pb-0">{children}</main>
       <div className="pb-14 md:pb-0">
         <Footer />

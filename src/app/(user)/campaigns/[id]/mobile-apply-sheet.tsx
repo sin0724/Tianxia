@@ -48,9 +48,18 @@ export function MobileApplySheet({
       );
     }
     if (existingApplication) {
+      const actionNeeded =
+        existingApplication.status === "approved" ||
+        existingApplication.status === "scheduled";
       return (
         <Link href="/mypage/applications" className="shrink-0">
-          <Button size="sm" variant="outline" className="rounded-full px-5">查看申請</Button>
+          <Button
+            size="sm"
+            variant={actionNeeded ? "default" : "outline"}
+            className="rounded-full px-5"
+          >
+            {actionNeeded ? "前往操作 →" : "查看申請"}
+          </Button>
         </Link>
       );
     }
@@ -90,11 +99,11 @@ export function MobileApplySheet({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[60] bg-black/50"
+            className="fixed inset-0 z-[60] bg-black/50 animate-in fade-in duration-200"
             onClick={() => setIsOpen(false)}
           />
           {/* Sheet Panel */}
-          <div className="fixed inset-x-0 bottom-0 z-[70] max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white shadow-xl">
+          <div className="fixed inset-x-0 bottom-0 z-[70] max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white shadow-xl animate-in slide-in-from-bottom duration-300">
             <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-4">
               <h3 className="text-base font-semibold">申請活動</h3>
               <button

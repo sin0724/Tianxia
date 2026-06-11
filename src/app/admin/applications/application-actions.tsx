@@ -10,6 +10,31 @@ import { toast } from "@/hooks/use-toast";
 import { Check, X, Calendar, ClipboardCheck, Trophy, Trash2, ExternalLink, FileText, Clock } from "lucide-react";
 import type { ApplicationStatus } from "@/types/database";
 
+const KO_WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+function weekdayOf(key: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  if (!y || !m || !d) return "";
+  return `(${KO_WEEKDAYS[new Date(y, m - 1, d).getDay()]})`;
+}
+
+// 유저 선호 시간대 칩(중국어)을 한국어로 변환해 표시
+const TIME_CHIP_LABELS: Record<string, string> = {
+  "上午": "오전",
+  "下午": "오후",
+  "晚上": "저녁",
+  "皆可配合": "모두 가능",
+};
+
+export function translatePreferredTime(value: string) {
+  return value
+    .split("、")
+    .map((part) => TIME_CHIP_LABELS[part.trim()] ?? part.trim())
+    .join(", ");
+}
+
+const QUICK_TIMES = ["10:00", "12:00", "14:00", "16:00", "19:00"];
+
 interface ScheduleProposal {
   proposed_dates: string[];
   preferred_time: string | null;
@@ -228,21 +253,24 @@ export function ApplicationActions({
         </p>
         {scheduleProposal && (
           <div className="rounded bg-blue-100 px-3 py-2">
-            <p className="mb-1.5 text-xs font-medium text-blue-700">유저 제안 날짜 (클릭하면 자동 입력)</p>
+            <p className="mb-1.5 text-xs font-medium text-blue-700">유저 제안 날짜 — 지망순 (클릭하면 자동 입력)</p>
             <div className="flex flex-wrap gap-1.5">
               {scheduleProposal.proposed_dates?.map((date, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => selectDate(date)}
-                  className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer"
                 >
-                  {date}
+                  <span className="font-bold text-blue-400">{i + 1}지망</span>
+                  {date} {weekdayOf(date)}
                 </button>
               ))}
             </div>
             {scheduleProposal.preferred_time && (
-              <p className="mt-1 text-xs text-blue-600">선호시간: {scheduleProposal.preferred_time}</p>
+              <p className="mt-1 text-xs text-blue-600">
+                선호시간: {translatePreferredTime(scheduleProposal.preferred_time)}
+              </p>
             )}
             {scheduleProposal.message && (
               scheduleProposal.message.startsWith("[일정변경]") ? (
@@ -263,6 +291,29 @@ export function ApplicationActions({
             onChange={(e) => setSelectedDate(e.target.value)}
             className="bg-white"
           />
+          {/* 시간 빠른 선택 — 날짜 선택 후 클릭 */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <span className="text-xs text-gray-400">시간:</span>
+            {QUICK_TIMES.map((t) => {
+              const datePart = selectedDate.split("T")[0];
+              const active = selectedDate.endsWith(`T${t}`);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  disabled={!datePart}
+                  onClick={() => setSelectedDate(`${datePart}T${t}`)}
+                  className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors disabled:opacity-40 ${
+                    active
+                      ? "border-blue-500 bg-blue-500 text-white"
+                      : "border-blue-200 bg-white text-blue-700 hover:bg-blue-100"
+                  }`}
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
           <p className="text-xs text-gray-500">입력한 날짜·시간이 유저에게 그대로 고지됩니다</p>
         </div>
         <div className="space-y-2">
@@ -291,6 +342,32 @@ export function ApplicationActions({
 
   // 3단계: reservation_submitted → 예약 확정/거절 (배송: 발송 완료 처리)
   if (status === "reservation_submitted") {
+    // 예약 접수 후 유저가 취소 요청한 경우
+    if (scheduleProposal?.message?.startsWith("[취소요청]")) {
+      const reason = scheduleProposal.message.replace("[취소요청]", "").trim() || "사유 없음";
+      return (
+        <div className="space-y-3 rounded-md border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-800">
+            🚫 취소 요청 접수
+          </p>
+          <p className="rounded bg-red-100 px-3 py-2 text-xs text-red-700">
+            취소 사유: {reason}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="destructive" onClick={() => updateStatus("rejected")} disabled={isLoading} className="gap-2">
+              {isLoading ? <LoadingSpinner size="sm" /> : <X className="h-4 w-4" />}
+              취소 확인 (반려 처리)
+            </Button>
+            <Button variant="outline" onClick={() => updateStatus("visit_confirmed")} disabled={isLoading} className="gap-2">
+              <Check className="h-4 w-4" />
+              취소 무시하고 예약 확정
+            </Button>
+          </div>
+          {deleteButton}
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-3 rounded-md border bg-green-50 p-4">
         <p className="text-sm font-semibold text-green-800">

@@ -51,6 +51,7 @@ export default function CampaignsClient() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -133,6 +134,7 @@ export default function CampaignsClient() {
       setCampaigns(paginatedCampaigns);
     }
 
+    setTotalCount(processedCampaigns.length);
     setHasMore(end < processedCampaigns.length);
     setLoading(false);
     setLoadingMore(false);
@@ -365,7 +367,7 @@ export default function CampaignsClient() {
 
         {/* Results Count */}
         <div className="mb-4 text-xs font-medium text-gray-400">
-          共 {campaigns.length} 個活動
+          共 {totalCount} 個活動
         </div>
 
         {/* Campaign Grid */}

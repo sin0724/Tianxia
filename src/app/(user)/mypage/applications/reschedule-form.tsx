@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
 import { CalendarDays, X } from "lucide-react";
+import { DateMultiPicker } from "@/components/user/date-multi-picker";
 
 interface RescheduleFormProps {
   applicationId: string;
@@ -32,14 +32,8 @@ export function RescheduleForm({
   onCancel,
 }: RescheduleFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [dates, setDates] = useState<string[]>(["", "", ""]);
+  const [dates, setDates] = useState<string[]>([]);
   const [reason, setReason] = useState("");
-
-  const updateDate = (index: number, value: string) => {
-    const updated = [...dates];
-    updated[index] = value;
-    setDates(updated);
-  };
 
   const selectChip = (chip: string) => {
     setReason((prev) =>
@@ -49,12 +43,11 @@ export function RescheduleForm({
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validDates = dates.filter(Boolean);
     if (!reason.trim()) {
       toast({ title: "請填寫變更原因", variant: "destructive" });
       return;
     }
-    if (validDates.length === 0) {
+    if (dates.length === 0) {
       toast({ title: "請至少選擇一個希望日期", variant: "destructive" });
       return;
     }
@@ -67,7 +60,7 @@ export function RescheduleForm({
       .upsert(
         {
           application_id: applicationId,
-          proposed_dates: validDates,
+          proposed_dates: dates,
           preferred_time: null,
           message: `[일정변경] ${reason.trim()}`,
           confirmed_date: null,
@@ -153,18 +146,9 @@ export function RescheduleForm({
 
       <div className="space-y-2">
         <Label className="text-sm">
-          新希望日期（最多3個）<span className="text-red-500">*</span>
+          新希望日期 <span className="text-red-500">*</span>
         </Label>
-        {dates.map((date, i) => (
-          <Input
-            key={i}
-            type="date"
-            value={date}
-            onChange={(e) => updateDate(i, e.target.value)}
-            className="bg-white"
-            min={new Date().toISOString().split("T")[0]}
-          />
-        ))}
+        <DateMultiPicker selected={dates} onChange={setDates} maxDates={3} />
       </div>
 
       <div className="flex gap-2">

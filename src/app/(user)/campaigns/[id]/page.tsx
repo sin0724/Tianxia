@@ -451,36 +451,40 @@ export default async function CampaignDetailPage({
                     </p>
                   </div>
                 ) : existingApplication ? (
-                  <div className="text-center">
-                    <Badge
-                      variant={
-                        existingApplication.status === "approved"
-                          ? "success"
-                          : existingApplication.status === "rejected"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                      className="mb-4"
-                    >
-                      {existingApplication.status === "approved"
-                        ? "已選中"
-                        : existingApplication.status === "rejected"
-                        ? "未選中"
-                        : "審核中"}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">
-                      {existingApplication.status === "approved"
-                        ? "恭喜您！請依照活動說明進行體驗"
-                        : existingApplication.status === "rejected"
-                        ? "很抱歉，您未被選中參加此活動"
-                        : "您的申請正在審核中，請耐心等候"}
-                    </p>
-                    <Link href="/mypage/applications">
-                      <Button variant="outline" className="mt-4 w-full">
-                        查看申請狀態
-                      </Button>
-                    </Link>
-                  </div>
+                  (() => {
+                    const APPLICATION_STATUS_DISPLAY: Record<
+                      string,
+                      { label: string; variant: "success" | "destructive" | "secondary" | "default"; message: string; actionNeeded?: boolean }
+                    > = {
+                      pending:               { label: "審核中",     variant: "secondary",   message: "您的申請正在審核中，請耐心等候" },
+                      approved:              { label: "已選中",     variant: "success",     message: "恭喜入選！請至「我的申請」提案您的到訪日期", actionNeeded: true },
+                      schedule_proposed:     { label: "日程提案中", variant: "default",     message: "日程提案已送出，等待管理員確認" },
+                      scheduled:             { label: "日程已確定", variant: "success",     message: "日程已確定！請至「我的申請」填寫預約資訊", actionNeeded: true },
+                      reservation_submitted: { label: "預約審核中", variant: "default",     message: "預約資訊已送出，等待最終確認" },
+                      visit_confirmed:       { label: "預約已確定", variant: "success",     message: "預約已確定！體驗完成後請記得提交後記" },
+                      completed:             { label: "已完成",     variant: "success",     message: "已全部完成，感謝您的參與！" },
+                      rejected:              { label: "未選中",     variant: "destructive", message: "很抱歉，您未被選中參加此活動" },
+                    };
+                    const display =
+                      APPLICATION_STATUS_DISPLAY[existingApplication.status] ??
+                      APPLICATION_STATUS_DISPLAY.pending;
+                    return (
+                      <div className="text-center">
+                        <Badge variant={display.variant} className="mb-4">
+                          {display.label}
+                        </Badge>
+                        <p className="text-sm text-muted-foreground">{display.message}</p>
+                        <Link href="/mypage/applications">
+                          <Button
+                            variant={display.actionNeeded ? "default" : "outline"}
+                            className="mt-4 w-full"
+                          >
+                            {display.actionNeeded ? "前往我的申請 →" : "查看申請狀態"}
+                          </Button>
+                        </Link>
+                      </div>
+                    );
+                  })()
                 ) : (
                   <ApplicationForm
                     campaignId={campaign.id}

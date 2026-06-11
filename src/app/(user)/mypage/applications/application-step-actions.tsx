@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import type { ApplicationStatus } from "@/types/database";
+import type { ReservationPrefill } from "@/components/user/applications-list-client";
 
 interface ApplicationStepActionsProps {
   applicationId: string;
@@ -26,6 +27,7 @@ interface ApplicationStepActionsProps {
   driveUrl?: string;
   isDelivery?: boolean;
   autoOpenForm?: boolean;
+  reservationPrefill?: ReservationPrefill | null;
 }
 
 export function ApplicationStepActions({
@@ -40,6 +42,7 @@ export function ApplicationStepActions({
   driveUrl,
   isDelivery,
   autoOpenForm = false,
+  reservationPrefill,
 }: ApplicationStepActionsProps) {
   const [showScheduleForm, setShowScheduleForm] = useState(autoOpenForm && (status === "approved"));
   const [showReservationForm, setShowReservationForm] = useState(autoOpenForm && (status === "scheduled"));
@@ -214,6 +217,7 @@ export function ApplicationStepActions({
             userName={userName}
             userLineId={userLineId}
             serviceOptions={serviceOptions}
+            prefill={reservationPrefill}
           />
         ) : (
           <div className="space-y-2">

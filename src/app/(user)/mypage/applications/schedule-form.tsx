@@ -1,45 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
-import { scheduleProposalSchema, type ScheduleProposalInput } from "@/lib/validations/application";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
-import { Plus, X, CalendarDays } from "lucide-react";
+import { CalendarDays } from "lucide-react";
+import { DateMultiPicker } from "@/components/user/date-multi-picker";
 
 interface ScheduleFormProps {
   applicationId: string;
   onSuccess: () => void;
 }
 
+const TIME_CHIPS = ["上午", "下午", "晚上", "皆可配合"];
+
 export function ScheduleForm({ applicationId, onSuccess }: ScheduleFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [dates, setDates] = useState<string[]>(["", "", ""]);
+  const [dates, setDates] = useState<string[]>([]);
+  const [timeChips, setTimeChips] = useState<string[]>([]);
+  const [customTime, setCustomTime] = useState("");
+  const [message, setMessage] = useState("");
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ScheduleProposalInput>({
-    resolver: zodResolver(scheduleProposalSchema),
-    defaultValues: { application_id: applicationId, proposed_dates: [] },
-  });
-
-  const updateDate = (index: number, value: string) => {
-    const updated = [...dates];
-    updated[index] = value;
-    setDates(updated);
-    setValue("proposed_dates", updated.filter(Boolean));
+  const toggleTimeChip = (chip: string) => {
+    setTimeChips((prev) =>
+      prev.includes(chip)
+        ? prev.filter((c) => c !== chip)
+        : chip === "皆可配合"
+        ? ["皆可配合"]
+        : [...prev.filter((c) => c !== "皆可配合"), chip]
+    );
   };
 
-  const onSubmit = async (data: ScheduleProposalInput) => {
-    const validDates = dates.filter(Boolean);
-    if (validDates.length === 0) {
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (dates.length === 0) {
       toast({ title: "請至少選擇一個希望日期", variant: "destructive" });
       return;
     }
+
+    const preferredTime =
+      [...timeChips, customTime.trim()].filter(Boolean).join("、") || null;
 
     setIsLoading(true);
     const supabase = createClient();
@@ -50,9 +54,9 @@ export function ScheduleForm({ applicationId, onSuccess }: ScheduleFormProps) {
       .upsert(
         {
           application_id: applicationId,
-          proposed_dates: validDates,
-          preferred_time: data.preferred_time || null,
-          message: data.message || null,
+          proposed_dates: dates,
+          preferred_time: preferredTime,
+          message: message.trim() || null,
         },
         { onConflict: "application_id" }
       );
@@ -80,61 +84,62 @@ export function ScheduleForm({ applicationId, onSuccess }: ScheduleFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border bg-blue-50/50 p-4">
+    <form onSubmit={onSubmit} className="space-y-4 rounded-lg border bg-blue-50/50 p-4">
       <div className="flex items-center gap-2">
         <CalendarDays className="h-4 w-4 text-blue-600" />
         <p className="text-sm font-semibold text-blue-800">提案到訪日期</p>
       </div>
 
       <div className="space-y-2">
-        <Label className="text-sm">希望日期 (最多3個)</Label>
-        {dates.map((date, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => updateDate(i, e.target.value)}
-              className="flex-1 bg-white"
-              min={new Date().toISOString().split("T")[0]}
-            />
-            {i > 0 && (
-              <button
-                type="button"
-                onClick={() => updateDate(i, "")}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        ))}
-        {errors.proposed_dates && (
-          <p className="text-xs text-red-500">{errors.proposed_dates.message}</p>
-        )}
+        <Label className="text-sm">
+          希望日期 <span className="text-red-500">*</span>
+        </Label>
+        <DateMultiPicker selected={dates} onChange={setDates} maxDates={3} />
       </div>
 
-      <div className="space-y-1">
-        <Label className="text-sm">偏好時段 (選填)</Label>
+      <div className="space-y-2">
+        <Label className="text-sm">偏好時段（選填）</Label>
+        <div className="flex flex-wrap gap-1.5">
+          {TIME_CHIPS.map((chip) => {
+            const active = timeChips.includes(chip);
+            return (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => toggleTimeChip(chip)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  active
+                    ? "border-blue-500 bg-blue-500 text-white"
+                    : "border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
+                }`}
+              >
+                {chip}
+              </button>
+            );
+          })}
+        </div>
         <Input
-          {...register("preferred_time")}
-          placeholder="例：12:00-14:00 / 晚上7點後"
+          value={customTime}
+          onChange={(e) => setCustomTime(e.target.value)}
+          placeholder="具體時間可在此補充，例：12:00-14:00"
           className="bg-white"
         />
       </div>
 
       <div className="space-y-1">
-        <Label className="text-sm">備註 (選填)</Label>
+        <Label className="text-sm">備註（選填）</Label>
         <Textarea
-          {...register("message")}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           placeholder="其他需要告知的事項..."
           rows={2}
           className="bg-white"
         />
       </div>
 
-      <Button type="submit" disabled={isLoading} className="w-full gap-2">
+      <Button type="submit" disabled={isLoading || dates.length === 0} className="w-full gap-2">
         {isLoading ? <LoadingSpinner size="sm" /> : <CalendarDays className="h-4 w-4" />}
-        送出日程提案
+        {dates.length === 0 ? "請先選擇日期" : `送出日程提案（已選 ${dates.length} 個日期）`}
       </Button>
     </form>
   );

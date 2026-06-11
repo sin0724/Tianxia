@@ -20,9 +20,10 @@ interface HeaderProps {
     id: string;
     email: string;
   } | null;
+  actionCount?: number;
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, actionCount = 0 }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -86,9 +87,14 @@ export function Header({ user }: HeaderProps) {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 rounded-full px-4">
+                <Button variant="outline" size="sm" className="relative gap-2 rounded-full px-4">
                   <User className="h-4 w-4" />
                   我的帳戶
+                  {actionCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+                      {actionCount > 9 ? "9+" : actionCount}
+                    </span>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -99,8 +105,13 @@ export function Header({ user }: HeaderProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/mypage/applications" className="cursor-pointer">
+                  <Link href="/mypage/applications" className="cursor-pointer justify-between">
                     我的申請
+                    {actionCount > 0 && (
+                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+                        {actionCount > 9 ? "9+" : actionCount}
+                      </span>
+                    )}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

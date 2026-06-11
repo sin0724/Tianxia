@@ -202,7 +202,7 @@ export function HomeClient({
                     <Link href={banner.link_url}>
                       <Image
                         src={banner.image_url}
-                        alt={banner.title || "배너"}
+                        alt={banner.title || "活動橫幅"}
                         fill
                         sizes="100vw"
                         className="object-cover"
@@ -212,7 +212,7 @@ export function HomeClient({
                   ) : (
                     <Image
                       src={banner.image_url}
-                      alt={banner.title || "배너"}
+                      alt={banner.title || "活動橫幅"}
                       fill
                       sizes="100vw"
                       className="object-cover"
@@ -251,8 +251,9 @@ export function HomeClient({
               )}
             </>
           ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-r from-gray-100 to-gray-200">
-              <p className="text-sm text-gray-400">배너 이미지 영역</p>
+            <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-primary/5 via-rose-50 to-amber-50">
+              <p className="text-xl font-bold text-gray-800 md:text-3xl">韓國體驗團申請平台</p>
+              <p className="text-sm text-gray-500 md:text-base">免費體驗韓國美食、美容、景點，分享你的打卡心得</p>
             </div>
           )}
         </div>

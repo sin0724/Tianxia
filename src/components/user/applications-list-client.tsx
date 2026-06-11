@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, CalendarDays, ClipboardList, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, CalendarDays, ClipboardList, AlertCircle, FileText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { ApplicationStepActions } from "@/app/(user)/mypage/applications/application-step-actions";
 import type { ApplicationStatus } from "@/types/database";
@@ -67,12 +67,21 @@ type ScheduleProposalData = {
 type ReservationInfoData = {
   passport_name: string;
   date_of_birth: string;
+  visitor_count: number | null;
   reservation_datetime: string;
   emergency_contact: string;
   line_id: string | null;
   selected_service: string | null;
   special_requests: string | null;
 } | null;
+
+export type ReservationPrefill = {
+  passport_name: string;
+  date_of_birth: string;
+  visitor_count: number | null;
+  emergency_contact: string;
+  line_id: string | null;
+};
 
 type DeliveryAddressData = {
   recipient_name: string;
@@ -167,12 +176,22 @@ function StepProgress({ status, isDelivery }: { status: ApplicationStatus; isDel
   );
 }
 
+function unwrapReservation(
+  value: ApplicationItem["reservation_info"]
+): ReservationInfoData {
+  return Array.isArray(value)
+    ? ((value[0] as ReservationInfoData) ?? null)
+    : (value as ReservationInfoData);
+}
+
 function ApplicationCard({
   application,
   profile,
+  reservationPrefill,
 }: {
   application: ApplicationItem;
   profile: ApplicationsListClientProps["profile"];
+  reservationPrefill: ReservationPrefill | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [autoOpenForm, setAutoOpenForm] = useState(false);
@@ -194,9 +213,7 @@ function ApplicationCard({
   const scheduleProposal = Array.isArray(application.schedule_proposals)
     ? ((application.schedule_proposals[0] as ScheduleProposalData) ?? null)
     : (application.schedule_proposals as ScheduleProposalData);
-  const reservationInfo = Array.isArray(application.reservation_info)
-    ? ((application.reservation_info[0] as ReservationInfoData) ?? null)
-    : (application.reservation_info as ReservationInfoData);
+  const reservationInfo = unwrapReservation(application.reservation_info);
   const deliveryAddress = Array.isArray(application.delivery_addresses)
     ? ((application.delivery_addresses[0] as DeliveryAddressData) ?? null)
     : (application.delivery_addresses as DeliveryAddressData);
@@ -204,6 +221,29 @@ function ApplicationCard({
   const status = application.status;
   const config = STATUS_CONFIG[status] ?? { label: status, variant: "secondary" as const };
   const isActionRequired = status === "approved" || status === "scheduled";
+  const confirmedDate = scheduleProposal?.confirmed_date ?? null;
+
+  // 접힌 상태에서도 보이는 "지금 무슨 단계인지 / 뭘 기다리는지" 안내
+  const waitingHint = (() => {
+    switch (status) {
+      case "pending":
+        return "⏳ 審核中，通常需 3〜7 個工作天，獲選後會在此通知";
+      case "schedule_proposed":
+        return "⏳ 日程提案已送出，管理員確認後即可填寫預約資訊";
+      case "reservation_submitted":
+        return campaign.is_delivery
+          ? "📦 收件資訊已提交，等待商品寄出"
+          : "⏳ 預約資訊審核中，確認後預約即成立";
+      case "visit_confirmed":
+        return campaign.is_delivery
+          ? `📦 商品已寄出！收到後請發布內容並提交後記（截止：${formatDate(campaign.review_deadline)}）`
+          : `🎉 預約已確定！體驗完成後請提交後記（截止：${formatDate(campaign.review_deadline)}）`;
+      case "completed":
+        return "✅ 已全部完成，感謝您的參與";
+      default:
+        return null;
+    }
+  })();
 
   const rawOpts = campaign.service_options_zh_tw || campaign.service_options;
   const serviceOptions = rawOpts
@@ -238,6 +278,19 @@ function ApplicationCard({
         >
           <ClipboardList className="h-3.5 w-3.5" />
           填寫預約資訊 →
+        </Button>
+      );
+    }
+    if (status === "visit_confirmed") {
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-2 w-full gap-2 rounded-lg text-xs"
+          onClick={handleActionClick}
+        >
+          <FileText className="h-3.5 w-3.5" />
+          {campaign.is_delivery ? "提交後記 →" : "查看拍攝指南・提交後記 →"}
         </Button>
       );
     }
@@ -294,10 +347,22 @@ function ApplicationCard({
         <div className="mt-2">
           <StepProgress status={status} isDelivery={campaign.is_delivery} />
         </div>
+
+        {/* 확정 일정 — 펼치지 않아도 보이게 */}
+        {confirmedDate && (status === "scheduled" || status === "reservation_submitted" || status === "visit_confirmed") && (
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700">
+            📅 確定日程：{confirmedDate}
+          </div>
+        )}
+
+        {/* 대기/완료 상태 안내 — 펼치지 않아도 다음 단계를 알 수 있게 */}
+        {!isActionRequired && waitingHint && (
+          <p className="mt-2 text-[11px] leading-relaxed text-gray-500">{waitingHint}</p>
+        )}
       </button>
 
       {/* Compact action button — visible without expanding */}
-      {isActionRequired && !expanded && (
+      {(isActionRequired || status === "visit_confirmed") && !expanded && (
         <div className="px-4 pb-3">
           {getCompactActionButton()}
         </div>
@@ -377,7 +442,7 @@ function ApplicationCard({
           <ApplicationStepActions
             applicationId={application.id}
             status={status}
-            confirmedDate={scheduleProposal?.confirmed_date ?? null}
+            confirmedDate={confirmedDate}
             campaignId={campaign.id}
             userName={profile?.name ?? undefined}
             userEmail={profile?.email ?? undefined}
@@ -386,6 +451,17 @@ function ApplicationCard({
             driveUrl={campaign.drive_url ?? undefined}
             isDelivery={campaign.is_delivery}
             autoOpenForm={autoOpenForm}
+            reservationPrefill={
+              reservationInfo
+                ? {
+                    passport_name: reservationInfo.passport_name,
+                    date_of_birth: reservationInfo.date_of_birth,
+                    visitor_count: reservationInfo.visitor_count,
+                    emergency_contact: reservationInfo.emergency_contact,
+                    line_id: reservationInfo.line_id,
+                  }
+                : reservationPrefill
+            }
           />
 
           {application.admin_note && (
@@ -404,11 +480,28 @@ export function ApplicationsListClient({
   applications,
   profile,
 }: ApplicationsListClientProps) {
-  const [activeTab, setActiveTab] = useState<TabFilter>("active");
+  // 진행 중인 신청이 없으면 "전체" 탭을 기본으로 (빈 화면 방지)
+  const [activeTab, setActiveTab] = useState<TabFilter>(() =>
+    applications.some((a) => ACTIVE_STATUSES.includes(a.status)) ? "active" : "all"
+  );
 
   const actionNeededCount = applications.filter(
     (a) => a.status === "approved" || a.status === "scheduled"
   ).length;
+
+  // 다른 신청 건에서 이미 작성한 예약 정보가 있으면 새 예약 폼에 자동 입력
+  const lastReservation = applications
+    .map((a) => unwrapReservation(a.reservation_info))
+    .find((r) => r?.passport_name);
+  const reservationPrefill: ReservationPrefill | null = lastReservation
+    ? {
+        passport_name: lastReservation.passport_name,
+        date_of_birth: lastReservation.date_of_birth,
+        visitor_count: lastReservation.visitor_count,
+        emergency_contact: lastReservation.emergency_contact,
+        line_id: lastReservation.line_id,
+      }
+    : null;
 
   const filtered = applications.filter((app) => {
     if (activeTab === "all") return true;
@@ -504,6 +597,7 @@ export function ApplicationsListClient({
               key={application.id}
               application={application}
               profile={profile}
+              reservationPrefill={reservationPrefill ?? null}
             />
           ))}
         </div>

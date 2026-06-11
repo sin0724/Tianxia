@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
-import { ClipboardList, User, Phone, MessageSquare, Calendar, Star, Users } from "lucide-react";
+import { ClipboardList, User, Phone, MessageSquare, Calendar, Star, Users, Sparkles } from "lucide-react";
+import type { ReservationPrefill } from "@/components/user/applications-list-client";
 
 interface ReservationFormProps {
   applicationId: string;
@@ -20,6 +21,7 @@ interface ReservationFormProps {
   userName?: string;
   userLineId?: string;
   serviceOptions?: string[];
+  prefill?: ReservationPrefill | null;
 }
 
 export function ReservationForm({
@@ -29,17 +31,20 @@ export function ReservationForm({
   userName,
   userLineId,
   serviceOptions,
+  prefill,
 }: ReservationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const hasPrefill = !!prefill?.passport_name;
 
   const { register, handleSubmit, formState: { errors } } = useForm<ReservationInfoInput>({
     resolver: zodResolver(reservationInfoSchema),
     defaultValues: {
       application_id: applicationId,
-      passport_name: "",
-      date_of_birth: "",
-      visitor_count: 1,
-      line_id: userLineId || "",
+      passport_name: prefill?.passport_name || "",
+      date_of_birth: prefill?.date_of_birth || "",
+      visitor_count: prefill?.visitor_count || 1,
+      emergency_contact: prefill?.emergency_contact || "",
+      line_id: prefill?.line_id || userLineId || "",
       reservation_datetime: confirmedDate,
     },
   });
@@ -102,6 +107,14 @@ export function ReservationForm({
           <p className="text-sm font-bold text-green-900">{confirmedDate}</p>
         </div>
       </div>
+
+      {/* 이전 예약 정보 자동 입력 안내 */}
+      {hasPrefill && (
+        <div className="flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+          <Sparkles className="h-3.5 w-3.5 shrink-0" />
+          已自動帶入您上次填寫的資料，確認無誤後即可直接送出
+        </div>
+      )}
 
       {/* 1. 護照英文姓名 */}
       <div className="space-y-1.5">

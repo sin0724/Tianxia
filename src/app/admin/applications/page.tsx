@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
 import { Search, Copy, Check, ExternalLink } from "lucide-react";
-import { ApplicationActions } from "./application-actions";
+import { ApplicationActions, translatePreferredTime } from "./application-actions";
 import type { ApplicationStatus } from "@/types/database";
 
 interface ScheduleProposal {
@@ -85,7 +85,22 @@ interface Application {
   is_settlement_target: boolean;
 }
 
-type StatusFilter = "all" | ApplicationStatus;
+type StatusFilter = "all" | ApplicationStatus | "cancel_requested" | "review_submitted";
+
+const KO_WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+function weekdayOf(key: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  if (!y || !m || !d) return "";
+  return `(${KO_WEEKDAYS[new Date(y, m - 1, d).getDay()]})`;
+}
+
+function hasCancellationRequest(a: Application) {
+  return (
+    !!a.schedule_proposals?.message?.startsWith("[취소요청]") &&
+    (a.status === "scheduled" || a.status === "reservation_submitted")
+  );
+}
 
 const STATUS_CONFIG: Record<ApplicationStatus, { label: string; color: string }> = {
   pending:               { label: "대기",       color: "bg-gray-100 text-gray-700" },
@@ -206,7 +221,13 @@ export default function AdminApplicationsPage() {
 
   const filteredApplications = useMemo(() => {
     let filtered = applications;
-    if (statusFilter !== "all") {
+    if (statusFilter === "cancel_requested") {
+      filtered = filtered.filter(hasCancellationRequest);
+    } else if (statusFilter === "review_submitted") {
+      filtered = filtered.filter(
+        (a) => a.status === "visit_confirmed" && a.reviews?.status === "submitted"
+      );
+    } else if (statusFilter !== "all") {
       filtered = filtered.filter((a) => a.status === statusFilter);
     }
     if (searchQuery.trim()) {
@@ -231,6 +252,23 @@ export default function AdminApplicationsPage() {
     return counts;
   }, [applications]);
 
+  // 관리자 처리가 필요한 항목 요약
+  const actionItems = useMemo(() => {
+    const cancelCount = applications.filter(hasCancellationRequest).length;
+    const reviewCount = applications.filter(
+      (a) => a.status === "visit_confirmed" && a.reviews?.status === "submitted"
+    ).length;
+    return [
+      { filter: "pending" as StatusFilter,               label: "승인 대기",      count: statusCounts["pending"] ?? 0,               color: "bg-gray-600" },
+      { filter: "schedule_proposed" as StatusFilter,     label: "일정 확정 필요", count: statusCounts["schedule_proposed"] ?? 0,     color: "bg-blue-600" },
+      { filter: "reservation_submitted" as StatusFilter, label: "예약 확정 필요", count: statusCounts["reservation_submitted"] ?? 0, color: "bg-orange-500" },
+      { filter: "cancel_requested" as StatusFilter,      label: "취소 요청",      count: cancelCount,                                color: "bg-red-500" },
+      { filter: "review_submitted" as StatusFilter,      label: "후기 확인",      count: reviewCount,                                color: "bg-purple-600" },
+    ].filter((item) => item.count > 0);
+  }, [applications, statusCounts]);
+
+  const totalActionCount = actionItems.reduce((sum, item) => sum + item.count, 0);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -245,6 +283,45 @@ export default function AdminApplicationsPage() {
         <h2 className="text-2xl font-bold">신청 관리</h2>
         <p className="text-muted-foreground">캠페인 신청 전체 플로우를 관리합니다</p>
       </div>
+
+      {/* 처리 필요 요약 배너 */}
+      {totalActionCount > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="mb-2.5 flex items-center gap-2">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+            </span>
+            <p className="text-sm font-semibold text-amber-800">
+              처리가 필요한 신청 {totalActionCount}건
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {actionItems.map((item) => (
+              <button
+                key={item.filter}
+                onClick={() =>
+                  setStatusFilter(statusFilter === item.filter ? "all" : item.filter)
+                }
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                  statusFilter === item.filter
+                    ? `${item.color} text-white shadow-sm`
+                    : "border border-amber-200 bg-white text-gray-700 hover:bg-amber-100"
+                }`}
+              >
+                {item.label}
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                    statusFilter === item.filter ? "bg-white/25 text-white" : `${item.color} text-white`
+                  }`}
+                >
+                  {item.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 상태 필터 탭 */}
       <div className="flex flex-wrap gap-2">
@@ -286,7 +363,10 @@ export default function AdminApplicationsPage() {
             const config = STATUS_CONFIG[application.status];
 
             return (
-              <Card key={application.id}>
+              <Card
+                key={application.id}
+                className={hasCancellationRequest(application) ? "ring-2 ring-red-300" : ""}
+              >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
@@ -365,18 +445,21 @@ export default function AdminApplicationsPage() {
                       {/* 제안 날짜 목록 */}
                       {application.schedule_proposals.proposed_dates?.length > 0 && (
                         <div>
-                          <p className="text-xs font-medium text-blue-700 mb-1">유저 제안 날짜</p>
+                          <p className="text-xs font-medium text-blue-700 mb-1">유저 제안 날짜 (지망순)</p>
                           <div className="flex flex-wrap gap-2">
                             {application.schedule_proposals.proposed_dates.map((d, i) => (
-                              <span key={i} className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                                {d}
+                              <span key={i} className="flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                                <span className="font-bold text-blue-500">{i + 1}지망</span>
+                                {d} {weekdayOf(d)}
                               </span>
                             ))}
                           </div>
                         </div>
                       )}
                       {application.schedule_proposals.preferred_time && (
-                        <p className="text-blue-700">선호시간: {application.schedule_proposals.preferred_time}</p>
+                        <p className="text-blue-700">
+                          선호시간: {translatePreferredTime(application.schedule_proposals.preferred_time)}
+                        </p>
                       )}
                       {application.schedule_proposals.message && (
                         application.schedule_proposals.message.startsWith("[취소요청]") ? (

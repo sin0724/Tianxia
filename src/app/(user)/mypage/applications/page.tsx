@@ -37,7 +37,7 @@ export default async function MyApplicationsPage() {
         proposed_dates, preferred_time, message, confirmed_date
       ),
       reservation_info (
-        passport_name, date_of_birth, reservation_datetime, emergency_contact, line_id, selected_service, special_requests
+        passport_name, date_of_birth, visitor_count, reservation_datetime, emergency_contact, line_id, selected_service, special_requests
       ),
       delivery_addresses (
         recipient_name, country, city_state, zipcode, address, mobile, email
@@ -61,8 +61,8 @@ export default async function MyApplicationsPage() {
         <p className="text-sm text-muted-foreground">查看申請狀態並完成各階段流程</p>
       </div>
 
-      {/* 진행 플로우 가이드 */}
-      <FlowGuide />
+      {/* 진행 플로우 가이드 — 첫 신청 사용자는 자동으로 펼침 */}
+      <FlowGuide defaultOpen={applications.length <= 1} />
 
       <ApplicationsListClient
         applications={applications}
@@ -72,7 +72,7 @@ export default async function MyApplicationsPage() {
   );
 }
 
-function FlowGuide() {
+function FlowGuide({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const steps = [
     {
       num: "01",
@@ -107,7 +107,7 @@ function FlowGuide() {
   ];
 
   return (
-    <details className="mb-4 rounded-xl border border-gray-100 bg-white shadow-sm">
+    <details open={defaultOpen} className="mb-4 rounded-xl border border-gray-100 bg-white shadow-sm">
       <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-gray-700 hover:text-primary">
         📋 如何進行？查看完整流程說明
       </summary>
