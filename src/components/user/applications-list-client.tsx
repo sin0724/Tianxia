@@ -93,6 +93,10 @@ type DeliveryAddressData = {
   email: string;
 } | null;
 
+type ReviewData = {
+  status: string;
+} | null;
+
 export type ApplicationItem = {
   id: string;
   status: ApplicationStatus;
@@ -102,6 +106,7 @@ export type ApplicationItem = {
   schedule_proposals: ScheduleProposalData;
   reservation_info: ReservationInfoData;
   delivery_addresses: DeliveryAddressData;
+  reviews?: ReviewData | ReviewData[];
 };
 
 interface ApplicationsListClientProps {
@@ -214,13 +219,18 @@ function ApplicationCard({
     ? ((application.schedule_proposals[0] as ScheduleProposalData) ?? null)
     : (application.schedule_proposals as ScheduleProposalData);
   const reservationInfo = unwrapReservation(application.reservation_info);
+  const reviewData = Array.isArray(application.reviews)
+    ? ((application.reviews[0] as ReviewData) ?? null)
+    : ((application.reviews as ReviewData) ?? null);
+  const reviewStatus = reviewData?.status ?? null;
   const deliveryAddress = Array.isArray(application.delivery_addresses)
     ? ((application.delivery_addresses[0] as DeliveryAddressData) ?? null)
     : (application.delivery_addresses as DeliveryAddressData);
 
   const status = application.status;
   const config = STATUS_CONFIG[status] ?? { label: status, variant: "secondary" as const };
-  const isActionRequired = status === "approved" || status === "scheduled";
+  const reviewRejected = status === "visit_confirmed" && reviewStatus === "rejected";
+  const isActionRequired = status === "approved" || status === "scheduled" || reviewRejected;
   const confirmedDate = scheduleProposal?.confirmed_date ?? null;
 
   // 접힌 상태에서도 보이는 "지금 무슨 단계인지 / 뭘 기다리는지" 안내
@@ -235,6 +245,12 @@ function ApplicationCard({
           ? "📦 收件資訊已提交，等待商品寄出"
           : "⏳ 預約資訊審核中，確認後預約即成立";
       case "visit_confirmed":
+        if (reviewStatus === "rejected") {
+          return "⚠️ 後記需要修改，請查看管理員的修改要求並重新提交";
+        }
+        if (reviewStatus === "submitted") {
+          return "⏳ 後記審核中，確認後此次合作即完成";
+        }
         return campaign.is_delivery
           ? `📦 商品已寄出！收到後請發布內容並提交後記（截止：${formatDate(campaign.review_deadline)}）`
           : `🎉 預約已確定！體驗完成後請提交後記（截止：${formatDate(campaign.review_deadline)}）`;
@@ -282,6 +298,20 @@ function ApplicationCard({
       );
     }
     if (status === "visit_confirmed") {
+      if (reviewStatus === "rejected") {
+        return (
+          <Link href="/mypage/reviews" className="block">
+            <Button
+              size="sm"
+              className="mt-2 w-full gap-2 rounded-lg bg-red-500 text-xs hover:bg-red-600"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              查看修改要求・重新提交後記 →
+            </Button>
+          </Link>
+        );
+      }
+      if (reviewStatus === "submitted") return null;
       return (
         <Button
           size="sm"
@@ -451,6 +481,7 @@ function ApplicationCard({
             driveUrl={campaign.drive_url ?? undefined}
             isDelivery={campaign.is_delivery}
             autoOpenForm={autoOpenForm}
+            reviewStatus={reviewStatus}
             reservationPrefill={
               reservationInfo
                 ? {
@@ -485,9 +516,13 @@ export function ApplicationsListClient({
     applications.some((a) => ACTIVE_STATUSES.includes(a.status)) ? "active" : "all"
   );
 
-  const actionNeededCount = applications.filter(
-    (a) => a.status === "approved" || a.status === "scheduled"
-  ).length;
+  const needsUserAction = (a: ApplicationItem) => {
+    if (a.status === "approved" || a.status === "scheduled") return true;
+    const review = Array.isArray(a.reviews) ? a.reviews[0] : a.reviews;
+    return a.status === "visit_confirmed" && review?.status === "rejected";
+  };
+
+  const actionNeededCount = applications.filter(needsUserAction).length;
 
   // 다른 신청 건에서 이미 작성한 예약 정보가 있으면 새 예약 폼에 자동 입력
   const lastReservation = applications
@@ -512,9 +547,8 @@ export function ApplicationsListClient({
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    const priority = (s: ApplicationStatus) =>
-      s === "approved" || s === "scheduled" ? 0 : 1;
-    return priority(a.status) - priority(b.status);
+    const priority = (app: ApplicationItem) => (needsUserAction(app) ? 0 : 1);
+    return priority(a) - priority(b);
   });
 
   const countByTab: Record<TabFilter, number> = {
@@ -553,7 +587,7 @@ export function ApplicationsListClient({
               您有 {actionNeededCount} 個申請需要操作
             </p>
             <p className="mt-0.5 text-xs text-amber-700">
-              請點選下方「已選中」或「日程已確定」的申請，點擊藍色/綠色按鈕提交資訊
+              請點選下方標示「需要您的操作」的申請，依按鈕指示完成提交
             </p>
           </div>
         </div>

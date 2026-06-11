@@ -18,12 +18,20 @@ export default async function UserLayout({
 
   let actionCount = 0;
   if (user) {
-    const { count } = await supabase
-      .from("applications")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .in("status", ["approved", "scheduled"]);
-    actionCount = count ?? 0;
+    const [{ count: stepCount }, { count: rejectedReviewCount }] = await Promise.all([
+      supabase
+        .from("applications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .in("status", ["approved", "scheduled"]),
+      // 반려된 후기 (재제출 필요)
+      supabase
+        .from("reviews")
+        .select("id, applications!inner(user_id)", { count: "exact", head: true })
+        .eq("applications.user_id", user.id)
+        .eq("status", "rejected"),
+    ]);
+    actionCount = (stepCount ?? 0) + (rejectedReviewCount ?? 0);
   }
 
   return (

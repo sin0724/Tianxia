@@ -41,6 +41,9 @@ export default async function MyApplicationsPage() {
       ),
       delivery_addresses (
         recipient_name, country, city_state, zipcode, address, mobile, email
+      ),
+      reviews (
+        status
       )
     `)
     .eq("user_id", user.id)
@@ -100,8 +103,8 @@ function FlowGuide({ defaultOpen = false }: { defaultOpen?: boolean }) {
     },
     {
       num: "05",
-      title: "提交後記",
-      desc: "體驗完成後在社群媒體發布後記，至「後記管理」頁面貼上連結提交即完成。",
+      title: "提交後記 & 審核",
+      desc: "體驗完成後在社群媒體發布後記，至「後記管理」頁面貼上連結提交。管理員審核通過即全部完成；若需修改會通知您重新提交。",
       color: "bg-rose-50 border-rose-100 text-rose-700",
     },
   ];

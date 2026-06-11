@@ -28,6 +28,7 @@ interface ApplicationStepActionsProps {
   isDelivery?: boolean;
   autoOpenForm?: boolean;
   reservationPrefill?: ReservationPrefill | null;
+  reviewStatus?: string | null;
 }
 
 export function ApplicationStepActions({
@@ -43,6 +44,7 @@ export function ApplicationStepActions({
   isDelivery,
   autoOpenForm = false,
   reservationPrefill,
+  reviewStatus,
 }: ApplicationStepActionsProps) {
   const [showScheduleForm, setShowScheduleForm] = useState(autoOpenForm && (status === "approved"));
   const [showReservationForm, setShowReservationForm] = useState(autoOpenForm && (status === "scheduled"));
@@ -276,6 +278,42 @@ export function ApplicationStepActions({
             {cancellationForm}
           </>
         )}
+      </div>
+    );
+  }
+
+  // 후기가 반려된 경우 — 수정 요청 안내 (도착형/배송형 공통)
+  if (status === "visit_confirmed" && reviewStatus === "rejected") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          <span className="text-base">⚠️</span>
+          <span>後記未通過審核，請查看管理員的修改要求後重新提交</span>
+        </div>
+        <Link href="/mypage/reviews">
+          <Button size="sm" className="gap-2 bg-red-500 hover:bg-red-600">
+            <FileText className="h-4 w-4" />
+            查看修改要求・重新提交
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // 후기 심사 중 — 대기 안내 (도착형/배송형 공통)
+  if (status === "visit_confirmed" && reviewStatus === "submitted") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-sm text-blue-700">
+          <span className="text-base">⏳</span>
+          <span>後記審核中，確認後此次合作即完成。若需修改會在此通知您</span>
+        </div>
+        <Link href="/mypage/reviews">
+          <Button variant="outline" size="sm" className="gap-2">
+            <FileText className="h-4 w-4" />
+            查看已提交的後記
+          </Button>
+        </Link>
       </div>
     );
   }

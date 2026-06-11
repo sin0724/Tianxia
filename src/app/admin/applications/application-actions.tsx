@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
 import { Check, X, Calendar, ClipboardCheck, Trophy, Trash2, ExternalLink, FileText, Clock } from "lucide-react";
@@ -49,6 +50,7 @@ interface ReviewInfo {
   visited_at: string | null;
   submitted_at: string;
   status: string;
+  admin_feedback: string | null;
 }
 
 interface ApplicationActionsProps {
@@ -74,6 +76,8 @@ export function ApplicationActions({
   const [adminNote, setAdminNote] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRejectReviewForm, setShowRejectReviewForm] = useState(false);
+  const [reviewFeedback, setReviewFeedback] = useState("");
 
   const supabase = createClient();
 
@@ -398,14 +402,14 @@ export function ApplicationActions({
     );
   }
 
-  // 4단계: visit_confirmed → 후기 확인 후 완료 처리
+  // 4단계: visit_confirmed → 후기 확인 후 완료 처리 / 반려 (수정 요청)
   if (status === "visit_confirmed") {
     const approveAndComplete = async () => {
       setIsLoading(true);
       if (review?.id) {
         const { error: reviewError } = await supabase
           .from("reviews")
-          .update({ status: "approved" })
+          .update({ status: "approved", admin_feedback: null })
           .eq("id", review.id);
         if (reviewError) {
           toast({ title: "오류 발생", description: reviewError.message, variant: "destructive" });
@@ -415,6 +419,33 @@ export function ApplicationActions({
       }
       await updateStatus("completed");
     };
+
+    const rejectReview = async () => {
+      const reason = reviewFeedback.trim();
+      if (!review?.id || !reason) return;
+      setIsLoading(true);
+      const { error: reviewError } = await supabase
+        .from("reviews")
+        .update({ status: "rejected", admin_feedback: reason })
+        .eq("id", review.id);
+      if (reviewError) {
+        toast({ title: "오류 발생", description: reviewError.message, variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+      toast({ title: "후기 반려 완료", description: "유저가 사유를 확인하고 수정 후 재제출할 수 있습니다" });
+      setIsLoading(false);
+      setShowRejectReviewForm(false);
+      setReviewFeedback("");
+      onStatusChange?.();
+    };
+
+    const reviewStatusChip =
+      review?.status === "approved"
+        ? { label: "승인됨", className: "bg-green-200 text-green-800" }
+        : review?.status === "rejected"
+        ? { label: "반려됨", className: "bg-red-200 text-red-800" }
+        : { label: "제출됨", className: "bg-yellow-200 text-yellow-800" };
 
     return (
       <div className="space-y-3 rounded-md border bg-purple-50 p-4">
@@ -426,10 +457,8 @@ export function ApplicationActions({
         {review ? (
           <div className="rounded bg-purple-100 px-3 py-2.5 space-y-2">
             <div className="flex items-center gap-2">
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                review.status === "approved" ? "bg-green-200 text-green-800" : "bg-yellow-200 text-yellow-800"
-              }`}>
-                {review.status === "approved" ? "승인됨" : "제출됨"}
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${reviewStatusChip.className}`}>
+                {reviewStatusChip.label}
               </span>
               {review.visited_at && (
                 <span className="text-xs text-purple-600">방문일: {review.visited_at}</span>
@@ -447,6 +476,11 @@ export function ApplicationActions({
             {review.content && (
               <p className="text-xs text-purple-700 rounded bg-purple-50 px-2 py-1">{review.content}</p>
             )}
+            {review.status === "rejected" && (
+              <p className="rounded bg-red-100 px-2 py-1 text-xs text-red-700">
+                수정 요청 사항: {review.admin_feedback || "사유 없음"} — 유저 재제출 대기 중
+              </p>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-2 rounded bg-gray-100 px-3 py-2 text-sm text-gray-500">
@@ -455,16 +489,60 @@ export function ApplicationActions({
           </div>
         )}
 
-        <div className="flex gap-2">
-          <Button
-            onClick={approveAndComplete}
-            disabled={isLoading}
-            className="gap-2 bg-purple-600 hover:bg-purple-700"
-          >
-            {isLoading ? <LoadingSpinner size="sm" /> : <Trophy className="h-4 w-4" />}
-            {review ? "후기 승인 & 완료처리" : "완료처리"}
-          </Button>
-        </div>
+        {showRejectReviewForm && review ? (
+          <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3">
+            <p className="text-sm font-semibold text-red-700">후기 반려 — 수정 요청 사항</p>
+            <Textarea
+              value={reviewFeedback}
+              onChange={(e) => setReviewFeedback(e.target.value)}
+              placeholder="예: 매장 외관 사진이 누락되었습니다. 추가 후 다시 제출해주세요. (유저에게 그대로 표시됩니다)"
+              rows={3}
+              className="bg-white text-sm"
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={rejectReview}
+                disabled={isLoading || !reviewFeedback.trim()}
+                className="gap-1.5"
+              >
+                {isLoading ? <LoadingSpinner size="sm" /> : <X className="h-3.5 w-3.5" />}
+                반려 및 수정 요청
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowRejectReviewForm(false)}
+                disabled={isLoading}
+              >
+                취소
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={approveAndComplete}
+              disabled={isLoading}
+              className="gap-2 bg-purple-600 hover:bg-purple-700"
+            >
+              {isLoading ? <LoadingSpinner size="sm" /> : <Trophy className="h-4 w-4" />}
+              {review ? "후기 승인 & 완료처리" : "완료처리"}
+            </Button>
+            {review && review.status === "submitted" && (
+              <Button
+                variant="outline"
+                onClick={() => setShowRejectReviewForm(true)}
+                disabled={isLoading}
+                className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                <X className="h-4 w-4" />
+                반려 (수정 요청)
+              </Button>
+            )}
+          </div>
+        )}
         {deleteButton}
       </div>
     );

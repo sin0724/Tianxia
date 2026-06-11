@@ -13,13 +13,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { toast } from "@/hooks/use-toast";
 
-interface ReviewFormProps {
-  applicationId: string;
+interface ExistingReview {
+  id: string;
+  review_url: string;
+  content: string | null;
+  visited_at: string | null;
 }
 
-export function ReviewForm({ applicationId }: ReviewFormProps) {
+interface ReviewFormProps {
+  applicationId: string;
+  /** 반려된 후기를 다시 제출하는 경우 기존 후기 정보 */
+  existingReview?: ExistingReview | null;
+}
+
+export function ReviewForm({ applicationId, existingReview }: ReviewFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const isResubmission = !!existingReview;
 
   const {
     register,
@@ -29,6 +39,9 @@ export function ReviewForm({ applicationId }: ReviewFormProps) {
     resolver: zodResolver(reviewSchema),
     defaultValues: {
       application_id: applicationId,
+      review_url: existingReview?.review_url || "",
+      content: existingReview?.content || "",
+      visited_at: existingReview?.visited_at || "",
     },
   });
 
@@ -38,14 +51,22 @@ export function ReviewForm({ applicationId }: ReviewFormProps) {
     const supabase = createClient();
 
     const reviewData = {
-      application_id: data.application_id,
       review_url: data.review_url,
       content: data.content || null,
       visited_at: data.visited_at || null,
       status: "submitted" as const,
+      submitted_at: new Date().toISOString(),
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("reviews") as any).insert(reviewData);
+
+    // 재제출: 기존 행 업데이트 / 첫 제출: 새 행 생성
+    const { error } = isResubmission
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("reviews") as any)
+          .update(reviewData)
+          .eq("id", existingReview.id)
+      : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("reviews") as any)
+          .insert({ application_id: data.application_id, ...reviewData });
 
     if (error) {
       toast({
@@ -58,8 +79,10 @@ export function ReviewForm({ applicationId }: ReviewFormProps) {
     }
 
     toast({
-      title: "提交成功",
-      description: "您的後記已提交",
+      title: isResubmission ? "重新提交成功" : "提交成功",
+      description: isResubmission
+        ? "修改後的後記已送出，請等待管理員再次審核"
+        : "您的後記已提交",
     });
 
     router.refresh();
@@ -100,7 +123,7 @@ export function ReviewForm({ applicationId }: ReviewFormProps) {
       </div>
 
       <Button type="submit" disabled={isLoading}>
-        {isLoading ? <LoadingSpinner size="sm" /> : "提交後記"}
+        {isLoading ? <LoadingSpinner size="sm" /> : isResubmission ? "重新提交後記" : "提交後記"}
       </Button>
     </form>
   );

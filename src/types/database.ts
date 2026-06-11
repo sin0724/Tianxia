@@ -357,7 +357,8 @@ export type Database = {
           image_urls: string[] | null;
           visited_at: string | null;
           submitted_at: string;
-          status: "pending" | "submitted" | "approved";
+          status: "pending" | "submitted" | "approved" | "rejected";
+          admin_feedback: string | null;
         };
         Insert: {
           id?: string;
@@ -367,7 +368,8 @@ export type Database = {
           image_urls?: string[] | null;
           visited_at?: string | null;
           submitted_at?: string;
-          status?: "pending" | "submitted" | "approved";
+          status?: "pending" | "submitted" | "approved" | "rejected";
+          admin_feedback?: string | null;
         };
         Update: {
           id?: string;
@@ -377,7 +379,8 @@ export type Database = {
           image_urls?: string[] | null;
           visited_at?: string | null;
           submitted_at?: string;
-          status?: "pending" | "submitted" | "approved";
+          status?: "pending" | "submitted" | "approved" | "rejected";
+          admin_feedback?: string | null;
         };
       };
       hotel_partners: {
@@ -531,7 +534,7 @@ export type Database = {
       user_role: "user" | "admin";
       campaign_status: "draft" | "active" | "closed";
       application_status: ApplicationStatus;
-      review_status: "pending" | "submitted" | "approved";
+      review_status: "pending" | "submitted" | "approved" | "rejected";
     };
   };
 };

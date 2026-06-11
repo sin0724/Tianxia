@@ -45,6 +45,7 @@ interface ReviewInfo {
   visited_at: string | null;
   submitted_at: string;
   status: string;
+  admin_feedback: string | null;
 }
 
 interface Application {
@@ -188,7 +189,7 @@ export default function AdminApplicationsPage() {
         schedule_proposals (proposed_dates, preferred_time, message, confirmed_date),
         reservation_info (passport_name, date_of_birth, visitor_count, reservation_datetime, emergency_contact, line_id, selected_service, special_requests),
         delivery_addresses (recipient_name, country, city_state, zipcode, address, mobile, email),
-        reviews (id, review_url, content, visited_at, submitted_at, status)
+        reviews (id, review_url, content, visited_at, submitted_at, status, admin_feedback)
       `)
       .order("applied_at", { ascending: false });
 

@@ -27,6 +27,8 @@ export default async function AdminReviewsPage() {
         return <Badge variant="success">승인</Badge>;
       case "submitted":
         return <Badge variant="secondary">제출됨</Badge>;
+      case "rejected":
+        return <Badge variant="destructive">반려됨</Badge>;
       default:
         return <Badge variant="outline">대기</Badge>;
     }
@@ -102,8 +104,24 @@ export default async function AdminReviewsPage() {
                     </div>
                   )}
 
+                  {review.status === "rejected" && (
+                    <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3">
+                      <p className="text-sm font-medium text-red-700">
+                        반려됨 — 유저 재제출 대기 중
+                      </p>
+                      {(review as any).admin_feedback && (
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-red-600">
+                          수정 요청 사항: {(review as any).admin_feedback}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {review.status === "submitted" && (
-                    <ReviewActions reviewId={review.id} />
+                    <ReviewActions
+                      reviewId={review.id}
+                      applicationId={application?.id ?? null}
+                    />
                   )}
                 </CardContent>
               </Card>
