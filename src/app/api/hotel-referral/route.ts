@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
-  let body: { referralCode?: string; userId?: string };
+  // 인증된 세션에서 사용자 식별 — body 의 userId 를 신뢰하지 않음 (IDOR 방지)
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: { referralCode?: string };
   try {
     body = await request.json();
   } catch {
@@ -10,9 +21,9 @@ export async function POST(request: NextRequest) {
   }
 
   const referralCode = body.referralCode?.trim().toUpperCase();
-  const { userId } = body;
+  const userId = user.id;
 
-  if (!referralCode || !userId) {
+  if (!referralCode) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
@@ -31,12 +42,6 @@ export async function POST(request: NextRequest) {
 
   if (hotel.status !== "active") {
     return NextResponse.json({ error: "유효하지 않은 추천인 코드입니다" }, { status: 404 });
-  }
-
-  // userId 유효성 검증
-  const { data: userData, error: userErr } = await admin.auth.admin.getUserById(userId);
-  if (userErr || !userData.user) {
-    return NextResponse.json({ error: "User not found" }, { status: 400 });
   }
 
   // 이미 추천인 기록이 있으면 스킵

@@ -6,7 +6,12 @@ export async function GET(request: Request) {
   const category = searchParams.get("category");
   const region = searchParams.get("region");
   const platform = searchParams.get("platform");
-  const q = searchParams.get("q");
+  // PostgREST .or() 필터 문자열에 구조적 의미를 갖는 문자(콤마/괄호/와일드카드 등)를
+  // 제거해 필터 주입(filter injection)을 차단한다.
+  const rawQ = searchParams.get("q");
+  const q = rawQ
+    ? rawQ.replace(/[,()*%\\"']/g, "").trim().slice(0, 100)
+    : null;
 
   const supabase = createAdminClient();
 

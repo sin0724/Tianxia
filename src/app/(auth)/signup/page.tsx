@@ -114,7 +114,6 @@ function SignupForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: authData.user.id,
           referralCode: referralCode.trim(),
         }),
       });
