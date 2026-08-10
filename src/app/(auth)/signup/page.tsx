@@ -138,7 +138,7 @@ function SignupForm() {
           <Image
             src="/티엔샤로고.png"
             alt="Tianxia"
-            width={140}
+            width={152}
             height={40}
             className="mx-auto mb-4 h-10 w-auto"
           />

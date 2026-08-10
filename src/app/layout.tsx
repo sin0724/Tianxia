@@ -84,14 +84,33 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${siteUrl}/#organization`,
+    name: "天下 Tianxia",
+    alternateName: "티엔샤",
+    url: siteUrl,
+    logo: {
+      "@type": "ImageObject",
+      url: `${siteUrl}/icons/icon-512x512.png`,
+      width: 512,
+      height: 512,
+    },
+    image: `${siteUrl}/og-image.png`,
+    description: "專為台灣人打造的韓國體驗團平台，提供首爾美食、咖啡廳、美容等免費體驗機會。",
+  };
+
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${siteUrl}/#website`,
     name: "天下 Tianxia",
     alternateName: "天下體驗團平台",
     url: siteUrl,
     description: "專為台灣人打造的韓國體驗團平台，提供首爾美食、咖啡廳、美容等免費體驗機會。",
     inLanguage: "zh-TW",
+    publisher: { "@id": `${siteUrl}/#organization` },
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -107,6 +126,10 @@ export default function RootLayout({
       <body
         className={`${notoSansTC.variable} ${notoSansKR.variable} font-sans antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}

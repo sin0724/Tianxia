@@ -10,7 +10,7 @@ export function Footer() {
             <Image
               src="/logo.png"
               alt="Tianxia"
-              width={120}
+              width={133}
               height={35}
               className="h-7 w-auto opacity-80"
             />

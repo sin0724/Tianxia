@@ -75,7 +75,7 @@ export function AdminSidebar() {
           <NextImage
             src="/logo.png"
             alt="Tianxia"
-            width={100}
+            width={114}
             height={30}
             className="h-6 w-auto"
           />

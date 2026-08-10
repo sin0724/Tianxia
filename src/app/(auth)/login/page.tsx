@@ -77,7 +77,7 @@ function LoginForm() {
         <Image
           src="/logo.png"
           alt="Tianxia"
-          width={120}
+          width={152}
           height={40}
           className="mx-auto mb-4 h-10 w-auto"
         />

@@ -45,7 +45,7 @@ export function Header({ user, actionCount = 0 }: HeaderProps) {
           <Image
             src="/티엔샤로고.png"
             alt="Tianxia"
-            width={140}
+            width={152}
             height={40}
             className="h-8 w-auto"
             priority
