@@ -24,7 +24,11 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
   const router = useRouter();
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [newDeadline, setNewDeadline] = useState(campaign.application_deadline);
+  // application_deadline 은 TIMESTAMPTZ 이므로 <input type="date"> 에 넣으려면
+  // 날짜 부분만 잘라내야 한다. (그렇지 않으면 입력칸이 빈 값으로 보인다)
+  const [newDeadline, setNewDeadline] = useState(
+    campaign.application_deadline?.split("T")[0] ?? ""
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const revalidate = (campaignId?: string) =>
@@ -101,9 +105,9 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
     const { error } = await supabase
       .from("campaigns")
       .update({
-        application_deadline: newDeadline,
-        experience_date: experienceDate.toISOString().split("T")[0],
-        review_deadline: reviewDeadline.toISOString().split("T")[0],
+        application_deadline: deadlineDate.toISOString(),
+        experience_date: experienceDate.toISOString(),
+        review_deadline: reviewDeadline.toISOString(),
         status: "active",
       })
       .eq("id", campaign.id);

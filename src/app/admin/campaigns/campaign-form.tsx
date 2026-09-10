@@ -29,6 +29,45 @@ import type { Campaign, Category } from "@/types/database";
 const DEFAULT_GUIDE_KO = "촬영 가이드 및 주의사항은 예약 확정 후 구글 드라이브 링크를 통해 개별 안내드립니다.";
 const DEFAULT_GUIDE_ZH = "拍攝指南及注意事項將於預約確認後透過 Google 雲端硬碟連結個別通知。";
 
+// campaigns 테이블의 application_deadline / experience_date / review_deadline 은
+// 모두 NOT NULL 이다. 체험 날짜·후기 마감일은 관리자가 비워두는 경우가 많으므로
+// 신청 마감일을 기준으로 자동 계산해 채운다. (연장 기능과 동일한 규칙)
+const toIsoDate = (value: string) => new Date(value).toISOString();
+
+const addMonths = (value: string, months: number) => {
+  const d = new Date(value);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString();
+};
+
+// Postgres 오류 코드를 관리자가 이해할 수 있는 메시지로 변환한다.
+const COLUMN_LABELS: Record<string, string> = {
+  application_deadline: "신청 마감일",
+  experience_date: "체험 날짜",
+  review_deadline: "후기 마감일",
+  title_ko: "캠페인 제목",
+  category: "카테고리",
+  region: "지역",
+};
+
+const describeDbError = (error: { message: string; code?: string; details?: string | null }) => {
+  if (error.code === "23502") {
+    const column = /column "([^"]+)"/.exec(error.message)?.[1];
+    const label = column ? COLUMN_LABELS[column] ?? column : "필수 항목";
+    return `${label}은(는) 반드시 입력해야 합니다.`;
+  }
+  if (error.code === "23505") {
+    return "이미 동일한 값이 등록되어 있습니다.";
+  }
+  if (error.code === "23503") {
+    return "참조하는 데이터를 찾을 수 없습니다. 카테고리/지역 설정을 확인해 주세요.";
+  }
+  if (error.code === "42501") {
+    return "권한이 없습니다. 관리자 계정으로 다시 로그인해 주세요.";
+  }
+  return `${error.message} (코드: ${error.code ?? "unknown"})`;
+};
+
 interface CampaignFormProps {
   campaign?: Campaign;
 }
@@ -337,6 +376,8 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
 
       const supabase = createClient();
 
+      const applicationDeadline = toIsoDate(data.application_deadline);
+
       const campaignData = {
         category: data.category || "",
         region: data.region || "",
@@ -349,15 +390,15 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         service_options: serviceOptions.trim() || null,
         recruitment_count: data.recruitment_count || 1,
         bonus_application_count: bonusCount || 0,
-        application_deadline: data.application_deadline
-          ? new Date(data.application_deadline).toISOString()
-          : null,
+        application_deadline: applicationDeadline,
+        // 미입력 시 신청 마감일과 동일하게 설정 (NOT NULL 보장)
         experience_date: data.experience_date
-          ? new Date(data.experience_date).toISOString()
-          : null,
+          ? toIsoDate(data.experience_date)
+          : applicationDeadline,
+        // 미입력 시 신청 마감일 + 1개월 (NOT NULL 보장)
         review_deadline: data.review_deadline
-          ? new Date(data.review_deadline).toISOString()
-          : null,
+          ? toIsoDate(data.review_deadline)
+          : addMonths(data.application_deadline, 1),
         status: data.status,
         campaign_type: campaignType,
         payment_amount: campaignType === "paid" && paymentDisplayType === "amount" ? (data.payment_amount ?? null) : null,
@@ -398,7 +439,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
           .eq("id", campaign.id);
 
         if (error) {
-          throw new Error(`DB 저장 실패: ${error.message} (코드: ${error.code})`);
+          throw new Error(`DB 저장 실패: ${describeDbError(error)}`);
         }
 
         await fetch("/api/revalidate", {
@@ -428,7 +469,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
         });
 
         if (error) {
-          throw new Error(`DB 저장 실패: ${error.message} (코드: ${error.code})`);
+          throw new Error(`DB 저장 실패: ${describeDbError(error)}`);
         }
 
         await fetch("/api/revalidate", {
@@ -468,7 +509,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
   const onValidationError = () => {
     toast({
       title: "입력 오류",
-      description: "필수 항목(캠페인명 등)을 확인해 주세요",
+      description: "필수 항목(캠페인 제목, 신청 마감일)을 확인해 주세요",
       variant: "destructive",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -776,12 +817,19 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
               <p className="text-xs text-gray-500">표시용 추가 인원</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="application_deadline">신청 마감일</Label>
+              <Label htmlFor="application_deadline">
+                신청 마감일 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="application_deadline"
                 type="date"
                 {...register("application_deadline")}
               />
+              {errors.application_deadline && (
+                <p className="text-sm text-destructive">
+                  {errors.application_deadline.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="experience_date">체험 날짜</Label>
@@ -790,7 +838,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
                 type="date"
                 {...register("experience_date")}
               />
-              <p className="text-xs text-gray-500">신청 마감 전이어도 OK</p>
+              <p className="text-xs text-gray-500">
+                신청 마감 전이어도 OK · 비우면 신청 마감일로 설정
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="review_deadline">후기 마감일</Label>
@@ -799,6 +849,7 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
                 type="date"
                 {...register("review_deadline")}
               />
+              <p className="text-xs text-gray-500">비우면 신청 마감일 +1개월</p>
             </div>
           </div>
 
@@ -998,7 +1049,9 @@ export function CampaignForm({ campaign }: CampaignFormProps) {
             type="button"
             variant="outline"
             disabled={isSavingWithoutTranslation}
-            onClick={() => handleSubmit((data) => saveCampaign(data, true))()}
+            onClick={() =>
+              handleSubmit((data) => saveCampaign(data, true), onValidationError)()
+            }
             className="border-orange-300 text-orange-700 hover:bg-orange-100"
           >
             {isSavingWithoutTranslation ? (
