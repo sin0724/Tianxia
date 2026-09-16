@@ -3,6 +3,7 @@ import { Header } from "@/components/shared/header";
 import { Footer } from "@/components/shared/footer";
 import { BottomTabBar } from "@/components/shared/bottom-tab-bar";
 import { OnboardingModal } from "@/components/user/onboarding-modal";
+import { LineMigrationNotice } from "@/components/shared/line-migration-notice";
 
 export default async function UserLayout({
   children,
@@ -43,6 +44,7 @@ export default async function UserLayout({
       </div>
       <BottomTabBar user={userProp} actionCount={actionCount} />
       {user && <OnboardingModal />}
+      <LineMigrationNotice />
     </div>
   );
 }
